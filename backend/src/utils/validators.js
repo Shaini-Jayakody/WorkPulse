@@ -114,6 +114,8 @@ const validateUpdateProfile = [
     .matches(/^\+?[\d\s-]{10,15}$/)
     .withMessage('Please provide a valid contact number (10-15 digits)')
 ];
+
+
 //report validation
 // Validation rules for create/update a report
 const validateReport = [
@@ -375,6 +377,53 @@ const asyncValidate = (validationRules) => {
   };
 };
 
+
+//validation for dashboard
+// Validation rules for dashboard filters
+const validateDashboardFilters = [
+  query('user_id')
+    .optional()
+    .isMongoId()
+    .withMessage('Invalid user ID format'),
+  
+  query('project')
+    .optional()
+    .isString()
+    .withMessage('Project must be a string')
+    .isLength({ max: 100 })
+    .withMessage('Project filter cannot exceed 100 characters'),
+  
+  query('category')
+    .optional()
+    .isString()
+    .withMessage('Category must be a string')
+    .isLength({ max: 50 })
+    .withMessage('Category filter cannot exceed 50 characters')
+];
+
+// Validation rules for date range
+const validateDateRange = [
+  query('startDate')
+    .notEmpty()
+    .withMessage('Start date is required')
+    .isISO8601()
+    .withMessage('Start date must be a valid date'),
+  
+  query('endDate')
+    .notEmpty()
+    .withMessage('End date is required')
+    .isISO8601()
+    .withMessage('End date must be a valid date')
+    .custom((value, { req }) => {
+      const start = new Date(req.query.startDate);
+      const end = new Date(value);
+      if (start > end) {
+        throw new Error('End date must be after start date');
+      }
+      return true;
+    })
+];
+
 //exports
 module.exports = {
   // Auth validations
@@ -389,6 +438,10 @@ module.exports = {
   validateReportFilters,
   validateReportId,
   validateWeekYear,
+
+  // Dashboard validations
+   validateDashboardFilters,
+   validateDateRange,
   
   // Common middleware
   validate,

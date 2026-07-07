@@ -50,6 +50,7 @@ process.on('SIGINT', async () => {
 //Import Routes
 const authRoutes = require('./src/routes/authRoutes'); 
 const reportRoutes = require('./src/routes/reportRoutes'); 
+const dashboardRoutes = require('./src/routes/dashboardRoutes');
 
 // Basic route for testing
 app.get('/', (req, res) => {
@@ -81,6 +82,7 @@ app.get('/health', (req, res) => {
 //Routes 
 app.use('/api/auth', authRoutes); 
 app.use('/api/reports', reportRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
