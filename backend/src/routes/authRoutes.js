@@ -3,6 +3,7 @@ const router = express.Router();
 const authController = require('../controllers/authController');
 const protect = require('../middleware/auth');
 const { hasRole, hasMinimumRole } = require('../middleware/roleCheck');
+const uploadProfileImage = require('../middleware/uploadProfileImage');
 const { 
   validateRegister, 
   validateLogin, 
@@ -12,7 +13,7 @@ const {
 } = require('../utils/validators');
 
 // Public routes
-router.post('/register', validateRegister, validate, authController.register);
+router.post('/register', uploadProfileImage, validateRegister, validate, authController.register);
 router.post('/login', validateLogin, validate, authController.login);
 
 // Protected routes (require authentication)
@@ -20,7 +21,7 @@ router.use(protect);
 
 // Profile routes
 router.get('/profile', authController.getProfile);
-router.put('/profile', validateUpdateProfile, validate, authController.updateProfile);
+router.put('/profile', uploadProfileImage, validateUpdateProfile, validate, authController.updateProfile);
 router.post('/logout', authController.logout);
 router.put('/change-password', validatePasswordChange, validate, authController.changePassword);
 

@@ -1,6 +1,32 @@
 const AuthService = require('../services/authService');
 const { AppError } = require('../utils/errorHandler');
 const User = require('../models/User');
+const cloudinary = require('../config/cloudinary');
+const { Readable } = require('stream');
+
+// Upload profile picture to Cloudinary
+const uploadProfilePictureToCloudinary = (fileBuffer, userId) => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: 'workpulse/profile-pictures',
+        public_id: `user_${userId}_profile`,
+        overwrite: true,
+        invalidate: true,
+        resource_type: 'image'
+      },
+      (error, result) => {
+        if (error) {
+          return reject(error);
+        }
+
+        resolve(result);
+      }
+    );
+
+    Readable.from([fileBuffer]).pipe(uploadStream);
+  });
+};
 
 class AuthController {
   // Register new user
@@ -23,6 +49,18 @@ class AuthController {
         role: role || 'team_member',
         contact_no
       });
+
+      const user = result.user;
+
+      if (req.file) {
+        const uploadResult = await uploadProfilePictureToCloudinary(req.file.buffer, user._id);
+
+        user.profile_picture_url = uploadResult.secure_url;
+        user.profile_picture_public_id = uploadResult.public_id;
+
+        await user.save();
+        result.user = user.getPublicProfile();
+      }
 
       res.status(201).json({
         success: true,
@@ -80,6 +118,13 @@ class AuthController {
       if (first_name) user.first_name = first_name;
       if (last_name) user.last_name = last_name;
       if (contact_no) user.contact_no = contact_no;
+
+      if (req.file) {
+        const uploadResult = await uploadProfilePictureToCloudinary(req.file.buffer, userId);
+
+        user.profile_picture_url = uploadResult.secure_url;
+        user.profile_picture_public_id = uploadResult.public_id;
+      }
 
       await user.save();
 

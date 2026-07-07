@@ -46,6 +46,16 @@ const userSchema = new mongoose.Schema({
     trim: true,
     match: [/^\+?[\d\s-]{10,15}$/, 'Please provide a valid contact number']
   },
+  profile_picture_url: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  profile_picture_public_id: {
+    type: String,
+    trim: true,
+    default: ''
+  },
   isActive: {
     type: Boolean,
     default: true

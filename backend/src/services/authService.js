@@ -44,7 +44,7 @@ class AuthService {
     const token = this.generateToken(user._id);
 
     return {
-      user: user.getPublicProfile(),
+      user,
       token
     };
   }
