@@ -47,9 +47,9 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
-//Routes
-
-const authRoutes = require('./src/routes/authRoutes'); //import auth route
+//Import Routes
+const authRoutes = require('./src/routes/authRoutes'); 
+const reportRoutes = require('./src/routes/reportRoutes'); 
 
 // Basic route for testing
 app.get('/', (req, res) => {
@@ -78,7 +78,9 @@ app.get('/health', (req, res) => {
   });
 });
 
-app.use('/api/auth', authRoutes); //auth route
+//Routes 
+app.use('/api/auth', authRoutes); 
+app.use('/api/reports', reportRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -61,9 +61,9 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Generate user_id before saving
+// Generate user_id 
 userSchema.pre('save', async function(next) {
-  // Only generate if user_id is not already set
+  // Only generate if not exist
   if (!this.user_id) {
     // Generate user_id (first letter of first_name + last_name + timestamp)
     const prefix = `${this.first_name.charAt(0)}${this.last_name}`.toUpperCase();
