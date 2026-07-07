@@ -47,6 +47,9 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
+//Routes
+
+const authRoutes = require('./src/routes/authRoutes'); //import auth route
 
 // Basic route for testing
 app.get('/', (req, res) => {
@@ -74,6 +77,8 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+app.use('/api/auth', authRoutes); //auth route
 
 // Error handling middleware
 app.use((err, req, res, next) => {
