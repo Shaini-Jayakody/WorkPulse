@@ -53,6 +53,7 @@ const reportRoutes = require('./src/routes/reportRoutes');
 const dashboardRoutes = require('./src/routes/dashboardRoutes');
 const projectRoutes = require('./src/routes/projectRoutes'); 
 const categoryRoutes = require('./src/routes/categoryRoutes'); 
+const analyticsRoutes = require('./src/routes/dashboardAnalyticsRoutes');
 
 // Basic route for testing
 app.get('/', (req, res) => {
@@ -87,6 +88,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/categories', categoryRoutes); 
+app.use('/api/analytics', analyticsRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
