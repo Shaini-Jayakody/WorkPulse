@@ -424,6 +424,118 @@ const validateDateRange = [
     })
 ];
 
+
+//validation for project
+const validateProject = [
+  body('project_name')
+    .notEmpty()
+    .withMessage('Project name is required')
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Project name must be between 2 and 100 characters')
+    .matches(/^[a-zA-Z0-9\s\-_.,&()]+$/)
+    .withMessage('Project name contains invalid characters'),
+  
+  body('description')
+    .optional()
+    .isLength({ max: 500 })
+    .withMessage('Description cannot exceed 500 characters'),
+  
+  body('category')
+    .notEmpty()
+    .withMessage('Category is required')
+    .isLength({ min: 2, max: 50 })
+    .withMessage('Category must be between 2 and 50 characters'),
+  
+  body('assigned_users')
+    .optional()
+    .isArray()
+    .withMessage('Assigned users must be an array')
+    .custom((value) => {
+      if (value) {
+        const invalidIds = value.filter(id => !id.match(/^[0-9a-fA-F]{24}$/));
+        if (invalidIds.length > 0) {
+          throw new Error('Invalid user ID format');
+        }
+      }
+      return true;
+    }),
+  
+  body('start_date')
+    .optional()
+    .isISO8601()
+    .withMessage('Start date must be a valid date'),
+  
+  body('end_date')
+    .optional()
+    .isISO8601()
+    .withMessage('End date must be a valid date')
+    .custom((value, { req }) => {
+      if (req.body.start_date && value) {
+        const start = new Date(req.body.start_date);
+        const end = new Date(value);
+        if (start > end) {
+          throw new Error('End date must be after start date');
+        }
+      }
+      return true;
+    }),
+  
+  body('budget')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('Budget must be a positive number'),
+  
+  body('priority')
+    .optional()
+    .isIn(['low', 'medium', 'high', 'critical'])
+    .withMessage('Priority must be low, medium, high, or critical'),
+  
+  body('status')
+    .optional()
+    .isIn(['planning', 'active', 'on_hold', 'completed', 'archived'])
+    .withMessage('Status must be planning, active, on_hold, completed, or archived'),
+  
+  body('tags')
+    .optional()
+    .isArray()
+    .withMessage('Tags must be an array')
+    .custom((value) => {
+      if (value && value.some(tag => tag.length > 30)) {
+        throw new Error('Tags cannot exceed 30 characters');
+      }
+      return true;
+    })
+];
+
+
+//validation for category
+const validateCategory = [
+  body('name')
+    .notEmpty()
+    .withMessage('Category name is required')
+    .isLength({ min: 2, max: 50 })
+    .withMessage('Category name must be between 2 and 50 characters')
+    .matches(/^[a-zA-Z0-9\s\-_.,&()]+$/)
+    .withMessage('Category name contains invalid characters'),
+  
+  body('description')
+    .optional()
+    .isLength({ max: 200 })
+    .withMessage('Description cannot exceed 200 characters'),
+  
+  body('color')
+    .optional()
+    .matches(/^#[0-9a-fA-F]{6}$/)
+    .withMessage('Please provide a valid hex color code (e.g., #6B7280)'),
+  
+  body('icon')
+    .optional()
+    .isString()
+    .withMessage('Icon must be a string')
+    .isLength({ max: 5 })
+    .withMessage('Icon cannot exceed 5 characters')
+];
+
 //exports
 module.exports = {
   // Auth validations
@@ -442,6 +554,10 @@ module.exports = {
   // Dashboard validations
    validateDashboardFilters,
    validateDateRange,
+
+   // Project and category validations
+   validateProject,
+   validateCategory,
   
   // Common middleware
   validate,

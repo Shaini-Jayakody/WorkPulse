@@ -51,6 +51,8 @@ process.on('SIGINT', async () => {
 const authRoutes = require('./src/routes/authRoutes'); 
 const reportRoutes = require('./src/routes/reportRoutes'); 
 const dashboardRoutes = require('./src/routes/dashboardRoutes');
+const projectRoutes = require('./src/routes/projectRoutes'); 
+const categoryRoutes = require('./src/routes/categoryRoutes'); 
 
 // Basic route for testing
 app.get('/', (req, res) => {
@@ -83,6 +85,8 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes); 
 app.use('/api/reports', reportRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/categories', categoryRoutes); 
 
 // Error handling middleware
 app.use((err, req, res, next) => {
