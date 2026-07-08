@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
 const protect = require('../middleware/auth');
-const { hasRole, hasMinimumRole } = require('../middleware/roleCheck');
+const { hasMinimumRole } = require('../middleware/roleCheck');
 const uploadProfileImage = require('../middleware/uploadProfileImage');
 const { 
   validateRegister, 
@@ -25,11 +25,16 @@ router.put('/profile', uploadProfileImage, validateUpdateProfile, validate, auth
 router.post('/logout', authController.logout);
 router.put('/change-password', validatePasswordChange, validate, authController.changePassword);
 
+// Approval routes
+router.get('/approvals/pending', hasMinimumRole('manager'), authController.getPendingApprovals);
+router.post('/users/:userId/approve', hasMinimumRole('manager'), authController.approveUser);
+router.post('/users/:userId/reject', hasMinimumRole('manager'), authController.rejectUser);
+
 // Admin/Manager only routes
 router.get('/users', hasMinimumRole('manager'), authController.getAllUsers);
 router.get('/users/search', hasMinimumRole('manager'), authController.searchUsers);
 router.get('/users/:id', hasMinimumRole('manager'), authController.getUserById);
-router.put('/users/role', hasRole('admin'), authController.updateUserRole);
+router.put('/users/role', hasMinimumRole('admin'), authController.updateUserRole);
 router.put('/users/:userId/deactivate', hasMinimumRole('manager'), authController.deactivateUser);
 router.put('/users/:userId/activate', hasMinimumRole('manager'), authController.activateUser);
 

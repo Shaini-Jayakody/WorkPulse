@@ -52,7 +52,7 @@ const isOwnResourceOrAuthorized = (resourceUserId) => {
     }
 
     // Allow if admin or manager
-    if (['admin', 'manager'].includes(req.user.role)) {
+    if (['super_admin', 'admin', 'manager'].includes(req.user.role)) {
       return next();
     }
 

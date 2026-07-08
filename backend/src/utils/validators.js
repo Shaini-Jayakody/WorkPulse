@@ -1,5 +1,26 @@
 const { body, validationResult, param, query } = require('express-validator');
 
+const MINIMUM_AGE = 18;
+
+const calculateAge = (value) => {
+  const birthDate = new Date(value);
+
+  if (Number.isNaN(birthDate.getTime())) {
+    return null;
+  }
+
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  const dayDiff = today.getDate() - birthDate.getDate();
+
+  if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+    age -= 1;
+  }
+
+  return age;
+};
+
 //uservalidation
 // Validation rules for registration
 const validateRegister = [
@@ -33,10 +54,44 @@ const validateRegister = [
     .withMessage('Password must contain at least one uppercase letter')
     .matches(/[a-z]/)
     .withMessage('Password must contain at least one lowercase letter'),
+
+  body('birthday')
+    .notEmpty()
+    .withMessage('Birthday is required')
+    .isISO8601()
+    .withMessage('Birthday must be a valid date')
+    .custom((value) => {
+      const age = calculateAge(value);
+      if (age === null) {
+        throw new Error('Birthday must be a valid date');
+      }
+      if (age < MINIMUM_AGE) {
+        throw new Error('User must be at least 18 years old');
+      }
+      return true;
+    }),
+
+  body('gender')
+    .notEmpty()
+    .withMessage('Gender is required')
+    .isIn(['male', 'female', 'other', 'prefer_not_to_say'])
+    .withMessage('Invalid gender selected'),
+
+  body('address')
+    .notEmpty()
+    .withMessage('Address is required')
+    .isLength({ min: 5, max: 250 })
+    .withMessage('Address must be between 5 and 250 characters'),
+
+  body('team_no')
+    .notEmpty()
+    .withMessage('Team number is required')
+    .isLength({ min: 1, max: 50 })
+    .withMessage('Team number must be between 1 and 50 characters'),
   
   body('role')
     .optional()
-    .isIn(['team_member', 'manager', 'admin'])
+    .isIn(['team_member', 'manager'])
     .withMessage('Invalid role specified'),
   
   body('contact_no')
@@ -113,6 +168,37 @@ const validateUpdateProfile = [
     .optional()
     .matches(/^\+?[\d\s-]{10,15}$/)
     .withMessage('Please provide a valid contact number (10-15 digits)')
+  ,
+
+  body('birthday')
+    .optional()
+    .isISO8601()
+    .withMessage('Birthday must be a valid date')
+    .custom((value) => {
+      const age = calculateAge(value);
+      if (age === null) {
+        throw new Error('Birthday must be a valid date');
+      }
+      if (age < MINIMUM_AGE) {
+        throw new Error('User must be at least 18 years old');
+      }
+      return true;
+    }),
+
+  body('gender')
+    .optional()
+    .isIn(['male', 'female', 'other', 'prefer_not_to_say'])
+    .withMessage('Invalid gender selected'),
+
+  body('address')
+    .optional()
+    .isLength({ min: 5, max: 250 })
+    .withMessage('Address must be between 5 and 250 characters'),
+
+  body('team_no')
+    .optional()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('Team number must be between 1 and 50 characters')
 ];
 
 

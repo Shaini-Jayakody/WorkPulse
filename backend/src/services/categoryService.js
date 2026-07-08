@@ -75,7 +75,7 @@ class CategoryService {
     // Check authorization
     const user = await User.findById(userId);
     if (category.created_by.toString() !== userId.toString() && 
-        user.role !== 'admin' && user.role !== 'manager') {
+        user.role !== 'admin' && user.role !== 'manager' && user.role !== 'super_admin') {
       throw new AppError('Not authorized to update this category', 403);
     }
 

@@ -170,7 +170,7 @@ class ProjectService {
     // Check if user is authorized (admin or project creator)
     if (project.created_by.toString() !== userId.toString()) {
       const user = await User.findById(userId);
-      if (user.role !== 'admin' && user.role !== 'manager') {
+      if (user.role !== 'admin' && user.role !== 'manager' && user.role !== 'super_admin') {
         throw new AppError('Not authorized to update this project', 403);
       }
     }
@@ -244,7 +244,7 @@ class ProjectService {
     // Check if user is authorized
     const user = await User.findById(userId);
     if (project.created_by.toString() !== userId.toString() && 
-        user.role !== 'admin' && user.role !== 'manager') {
+        user.role !== 'admin' && user.role !== 'manager' && user.role !== 'super_admin') {
       throw new AppError('Not authorized to delete this project', 403);
     }
 

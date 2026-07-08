@@ -1,5 +1,8 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const { APPROVAL_STATUS, ROLES } = require('../utils/constants');
+
+const GENDER_OPTIONS = ['male', 'female', 'other', 'prefer_not_to_say'];
 
 const userSchema = new mongoose.Schema({
   user_id: {
@@ -36,15 +39,56 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['team_member', 'manager', 'admin'],
+    enum: [ROLES.TEAM_MEMBER, ROLES.MANAGER, ROLES.ADMIN, ROLES.SUPER_ADMIN],
     default: 'team_member',
     required: true
+  },
+  birthday: {
+    type: Date,
+    required: [true, 'Birthday is required']
+  },
+  gender: {
+    type: String,
+    enum: GENDER_OPTIONS,
+    required: [true, 'Gender is required'],
+    trim: true
+  },
+  address: {
+    type: String,
+    required: [true, 'Address is required'],
+    trim: true,
+    maxlength: [250, 'Address cannot exceed 250 characters']
+  },
+  team_no: {
+    type: String,
+    required: [true, 'Team number is required'],
+    trim: true,
+    maxlength: [50, 'Team number cannot exceed 50 characters']
   },
   contact_no: {
     type: String,
     required: [true, 'Contact number is required'],
     trim: true,
     match: [/^\+?[\d\s-]{10,15}$/, 'Please provide a valid contact number']
+  },
+  approval_status: {
+    type: String,
+    enum: Object.values(APPROVAL_STATUS),
+    default: APPROVAL_STATUS.PENDING_MANAGER
+  },
+  approved_by: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  approved_at: {
+    type: Date,
+    default: null
+  },
+  rejection_reason: {
+    type: String,
+    trim: true,
+    default: ''
   },
   profile_picture_url: {
     type: String,
@@ -69,6 +113,28 @@ const userSchema = new mongoose.Schema({
   }]
 }, {
   timestamps: true
+});
+
+userSchema.pre('validate', function(next) {
+  if (!this.birthday) {
+    return next();
+  }
+
+  const birthDate = new Date(this.birthday);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  const dayDiff = today.getDate() - birthDate.getDate();
+
+  if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+    age -= 1;
+  }
+
+  if (age < 18) {
+    this.invalidate('birthday', 'User must be at least 18 years old');
+  }
+
+  next();
 });
 
 // Generate user_id 
@@ -112,6 +178,24 @@ userSchema.methods.getPublicProfile = function() {
 // Virtual for full name
 userSchema.virtual('full_name').get(function() {
   return `${this.first_name} ${this.last_name}`;
+});
+
+userSchema.virtual('age').get(function() {
+  if (!this.birthday) {
+    return null;
+  }
+
+  const birthDate = new Date(this.birthday);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  const dayDiff = today.getDate() - birthDate.getDate();
+
+  if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+    age -= 1;
+  }
+
+  return age;
 });
 
 // Ensure virtuals are included in JSON output

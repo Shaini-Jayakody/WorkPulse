@@ -3,6 +3,7 @@ const { AppError } = require('../utils/errorHandler');
 const User = require('../models/User');
 const cloudinary = require('../config/cloudinary');
 const { Readable } = require('stream');
+const { ROLES } = require('../utils/constants');
 
 // Upload profile picture to Cloudinary
 const uploadProfilePictureToCloudinary = (fileBuffer, userId) => {
@@ -38,7 +39,11 @@ class AuthController {
         email, 
         password, 
         role, 
-        contact_no 
+        contact_no,
+        birthday,
+        gender,
+        address,
+        team_no
       } = req.body;
       
       const result = await AuthService.register({
@@ -47,10 +52,14 @@ class AuthController {
         email,
         password,
         role: role || 'team_member',
-        contact_no
+        contact_no,
+        birthday,
+        gender,
+        address,
+        team_no
       });
 
-      const user = result.user;
+      const user = await User.findById(result.user._id);
 
       if (req.file) {
         const uploadResult = await uploadProfilePictureToCloudinary(req.file.buffer, user._id);
@@ -64,7 +73,9 @@ class AuthController {
 
       res.status(201).json({
         success: true,
-        message: 'User registered successfully',
+        message: user.approval_status === 'approved'
+          ? 'User registered successfully'
+          : 'Registration submitted successfully and is pending approval',
         data: result
       });
     } catch (error) {
@@ -107,6 +118,7 @@ class AuthController {
   async updateProfile(req, res, next) {
     try {
       const { first_name, last_name, contact_no } = req.body;
+      const { birthday, gender, address, team_no } = req.body;
       const userId = req.user._id;
 
       const user = await User.findById(userId);
@@ -118,6 +130,10 @@ class AuthController {
       if (first_name) user.first_name = first_name;
       if (last_name) user.last_name = last_name;
       if (contact_no) user.contact_no = contact_no;
+      if (birthday) user.birthday = birthday;
+      if (gender) user.gender = gender;
+      if (address) user.address = address;
+      if (team_no) user.team_no = team_no;
 
       if (req.file) {
         const uploadResult = await uploadProfilePictureToCloudinary(req.file.buffer, userId);
@@ -212,9 +228,14 @@ class AuthController {
   async updateUserRole(req, res, next) {
     try {
       const { userId, role } = req.body;
+      const currentUser = req.user;
 
       if (!userId || !role) {
         throw new AppError('User ID and role are required', 400);
+      }
+
+      if (!AuthService.canAssignRole(currentUser.role, role)) {
+        throw new AppError('You are not allowed to assign this role', 403);
       }
 
       if (!['team_member', 'manager', 'admin'].includes(role)) {
@@ -226,7 +247,28 @@ class AuthController {
         throw new AppError('User not found', 404);
       }
 
+      if (role === ROLES.MANAGER) {
+        const teamNo = req.body.team_no || user.team_no;
+        const existingManager = await User.findOne({
+          _id: { $ne: user._id },
+          team_no: teamNo,
+          role: ROLES.MANAGER,
+          approval_status: { $in: ['pending_admin_approval', 'approved'] }
+        });
+
+        if (existingManager) {
+          throw new AppError('This team already has a manager pending approval or approved', 409);
+        }
+
+        user.team_no = teamNo;
+      }
+
       user.role = role;
+      user.approval_status = 'approved';
+      user.isActive = true;
+      user.approved_by = currentUser._id;
+      user.approved_at = new Date();
+      user.rejection_reason = '';
       await user.save();
 
       res.status(200).json({
@@ -250,6 +292,7 @@ class AuthController {
       }
 
       user.isActive = false;
+      user.approval_status = 'deactivated';
       await user.save();
 
       res.status(200).json({
@@ -273,6 +316,9 @@ class AuthController {
       }
 
       user.isActive = true;
+      user.approval_status = 'approved';
+      user.approved_by = req.user._id;
+      user.approved_at = new Date();
       await user.save();
 
       res.status(200).json({
@@ -308,6 +354,51 @@ class AuthController {
       const users = await User.find(searchCriteria)
         .select('-password -__v')
         .sort({ createdAt: -1 });
+
+      res.status(200).json({
+        success: true,
+        count: users.length,
+        data: { users }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async approveUser(req, res, next) {
+    try {
+      const { userId } = req.params;
+      const result = await AuthService.approveUser(req.user._id, userId);
+
+      res.status(200).json({
+        success: true,
+        message: result.message,
+        data: { user: result.user }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async rejectUser(req, res, next) {
+    try {
+      const { userId } = req.params;
+      const { reason } = req.body;
+      const result = await AuthService.rejectUser(req.user._id, userId, reason);
+
+      res.status(200).json({
+        success: true,
+        message: result.message,
+        data: { user: result.user }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getPendingApprovals(req, res, next) {
+    try {
+      const users = await AuthService.getPendingApprovals(req.user);
 
       res.status(200).json({
         success: true,
