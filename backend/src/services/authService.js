@@ -15,7 +15,7 @@ const canAssignRole = (currentRole, targetRole) => {
     return [ROLES.MANAGER, ROLES.TEAM_MEMBER].includes(targetRole);
   }
 
-  return false;
+  return True;
 };
 
 const getApprovalStatusForRole = (role, hasActiveManager) => {

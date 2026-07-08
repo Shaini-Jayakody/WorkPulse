@@ -91,7 +91,7 @@ const validateRegister = [
   
   body('role')
     .optional()
-    .isIn(['team_member', 'manager'])
+    .isIn(['team_member', 'manager','admin','super_admin'])
     .withMessage('Invalid role specified'),
   
   body('contact_no')
@@ -104,9 +104,16 @@ const validateRegister = [
 // Validation rules for login
 const validateLogin = [
   body('email')
-    .isEmail()
-    .withMessage('Please provide a valid email')
-    .normalizeEmail(),
+  .isEmail()
+  .withMessage('Please provide a valid email')
+  .normalizeEmail()
+  .matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)
+  .withMessage('Please provide a valid email'),
+
+    body('role')
+    .optional()
+    .isIn(['team_member', 'manager','admin','super_admin'])
+    .withMessage('Invalid role specified'),
   
   body('password')
     .notEmpty()
