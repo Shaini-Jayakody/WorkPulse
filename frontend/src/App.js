@@ -12,6 +12,8 @@ import Users from './contexts/Users';
 import CreateUserForm from './components/auth/CreateUserForm';
 import Profile from './pages/Profile';
 import AdminReports from './pages/AdminReports';
+import MyReports from './pages/MyReports';
+import ReportView from './components/reports/ReportView';
 import api from './api/axiosConfig';
 
 function App() {
@@ -68,7 +70,6 @@ function App() {
     if (role === 'super_admin') {
       return '/dashboard/super-admin';
     }
-
     return '/dashboard/team-member';
   };
 
@@ -104,7 +105,9 @@ function App() {
           }}
         >
           <Routes>
-            {/* Public Routes - No Sidebar */}
+            {/* ============================================
+                PUBLIC ROUTES - No Sidebar
+                ============================================ */}
             <Route path="/" element={<Home />} />
             <Route path="/register" element={<RegisterForm />} />
             <Route
@@ -118,7 +121,11 @@ function App() {
               }
             />
             
-            {/* Protected Routes - With Sidebar */}
+            {/* ============================================
+                PROTECTED ROUTES - With Sidebar
+                ============================================ */}
+            
+            {/* Dashboard */}
             <Route 
               path="/dashboard" 
               element={
@@ -144,18 +151,16 @@ function App() {
             <Route
               path="/dashboard/super-admin"
               element={
-                isAuthenticated ? (
-                  user?.role === 'super_admin' ? (
-                    <SuperAdminDashboard />
-                  ) : (
-                    <Navigate to={getDashboardPath(user?.role)} replace />
-                  )
+                isAuthenticated && user?.role === 'super_admin' ? (
+                  <SuperAdminDashboard />
                 ) : (
-                  <Navigate to="/login" replace />
+                  <Navigate to={isAuthenticated ? getDashboardPath(user?.role) : "/login"} replace />
                 )
               }
             />
-             <Route
+
+            {/* Profile */}
+            <Route
               path="/profile"
               element={
                 isAuthenticated ? (
@@ -165,37 +170,63 @@ function App() {
                 )
               }
             />
+
+            {/* My Reports - Team Member */}
+            <Route
+              path="/reports"
+              element={
+                isAuthenticated ? (
+                  <MyReports />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+
+            {/* Report View - Team Member */}
+            <Route
+              path="/reports/view/:id"
+              element={
+                isAuthenticated ? (
+                  <ReportView />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+
+            {/* Admin Reports - Admin/Super Admin */}
+            <Route
+              path="/admin-reports"
+              element={
+                isAuthenticated && ['admin', 'super_admin'].includes(user?.role) ? (
+                  <AdminReports />
+                ) : (
+                  <Navigate to={isAuthenticated ? getDashboardPath(user?.role) : "/login"} replace />
+                )
+              }
+            />
+
+            {/* Users Management - Admin/Super Admin */}
+            <Route
+              path="/users"
+              element={
+                isAuthenticated && ['admin', 'super_admin'].includes(user?.role) ? (
+                  <Users />
+                ) : (
+                  <Navigate to={isAuthenticated ? getDashboardPath(user?.role) : "/login"} replace />
+                )
+              }
+            />
+
+            {/* Create User - Admin/Super Admin */}
             <Route
               path="/users/create"
               element={
                 isAuthenticated && ['admin', 'super_admin'].includes(user?.role) ? (
                   <CreateUserForm />
                 ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-  path="/admin-reports"
-  element={
-    isAuthenticated && ['admin', 'super_admin'].includes(user?.role) ? (
-      <AdminReports />
-    ) : (
-      <Navigate to="/login" replace />
-    )
-  }
-/>
-            <Route
-              path="/users"
-              element={
-                isAuthenticated ? (
-                  ['admin', 'super_admin'].includes(user?.role) ? (
-                    <Users />
-                  ) : (
-                    <Navigate to={getDashboardPath(user?.role)} replace />
-                  )
-                ) : (
-                  <Navigate to="/login" replace />
+                  <Navigate to={isAuthenticated ? getDashboardPath(user?.role) : "/login"} replace />
                 )
               }
             />
