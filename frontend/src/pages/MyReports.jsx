@@ -53,10 +53,7 @@ import api from '../api/axiosConfig';
 import ReportForm from '../components/reports/ReportForm';
 import ReportCard from '../components/reports/ReportCard';
 
-// ============================================
 // STYLED COMPONENTS
-// ============================================
-
 const StatsCard = styled(Paper)({
   padding: '20px 24px',
   borderRadius: '16px',
@@ -93,10 +90,8 @@ const StatusChip = styled(Chip)(({ status }) => ({
     '#EF4444',
 }));
 
-// ============================================
-// COMPONENT
-// ============================================
 
+// COMPONENT
 const MyReports = () => {
   const navigate = useNavigate();
   const [reports, setReports] = useState([]);
@@ -122,10 +117,8 @@ const MyReports = () => {
   const [selectedReport, setSelectedReport] = useState(null);
   const [formMode, setFormMode] = useState('create'); // 'create' | 'edit'
 
-  // ============================================
-  // FETCH REPORTS
-  // ============================================
 
+  // FETCH REPORTS
   const fetchReports = async () => {
     setLoading(true);
     setError('');
@@ -157,10 +150,8 @@ const MyReports = () => {
     fetchReports();
   }, []);
 
-  // ============================================
+ 
   // FILTERS
-  // ============================================
-
   const uniqueProjects = useMemo(() => {
     const projects = new Set();
     reports.forEach(report => {
@@ -223,10 +214,8 @@ const MyReports = () => {
     return filteredReports.slice(start, end);
   }, [filteredReports, page, rowsPerPage]);
 
-  // ============================================
-  // HANDLERS
-  // ============================================
 
+  // HANDLERS
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
     setPage(1);

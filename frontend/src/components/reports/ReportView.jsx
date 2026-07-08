@@ -19,6 +19,7 @@ import {
   Tooltip,
   LinearProgress,
   useTheme,
+  Link,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import {
@@ -42,15 +43,13 @@ import {
   Star,
   TrendingUp,
   AccessTime,
+  Link as LinkIcon,
 } from '@mui/icons-material';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import api from '../../api/axiosConfig';
 
-// ============================================
 // STYLED COMPONENTS
-// ============================================
-
 const DetailCard = styled(Paper)({
   padding: '16px 20px',
   borderRadius: '12px',
@@ -144,6 +143,25 @@ const BlockerChip = styled(Chip)({
   },
 });
 
+const LinkChip = styled(Chip)({
+  borderRadius: '6px',
+  margin: '4px',
+  padding: '2px 4px',
+  height: 'auto',
+  minHeight: '28px',
+  backgroundColor: 'rgba(59, 130, 246, 0.06)',
+  color: '#3B82F6',
+  border: '1px solid rgba(59, 130, 246, 0.1)',
+  '& .MuiChip-label': {
+    fontSize: '13px',
+    fontWeight: 500,
+    padding: '4px 10px',
+  },
+  '&:hover': {
+    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+  },
+});
+
 const InfoRow = styled(Box)({
   display: 'flex',
   alignItems: 'center',
@@ -167,10 +185,8 @@ const InfoValue = styled(Typography)({
   fontWeight: 500,
 });
 
-// ============================================
-// COMPONENT
-// ============================================
 
+// COMPONENT
 const ReportView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -180,6 +196,7 @@ const ReportView = () => {
   const [error, setError] = useState('');
   const [downloading, setDownloading] = useState(false);
   const [user, setUser] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
   const reportRef = useRef(null);
 
   useEffect(() => {
@@ -211,10 +228,44 @@ const ReportView = () => {
     fetchUser();
   }, [id]);
 
-  // ============================================
-  // PDF EXPORT FUNCTION
-  // ============================================
+  
+  // SUBMIT REPORT
+  const handleSubmit = async () => {
+    if (!window.confirm('Submit this report? You won\'t be able to edit it after submission.')) {
+      return;
+    }
 
+    setSubmitting(true);
+    try {
+      const response = await api.put(`/reports/${id}/submit`);
+      if (response.data.success) {
+        setReport(response.data.data.report);
+        setError('');
+      }
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to submit report.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+ 
+  // DELETE REPORT
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await api.delete(`/reports/${id}`);
+      navigate('/reports');
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to delete report.');
+    }
+  };
+
+  
+  // PDF EXPORT FUNCTION
   const exportToPDF = async () => {
     setDownloading(true);
     
@@ -225,7 +276,6 @@ const ReportView = () => {
         return;
       }
 
-      // Add a temporary class for PDF export
       element.classList.add('pdf-export');
       
       const canvas = await html2canvas(element, {
@@ -247,28 +297,11 @@ const ReportView = () => {
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-      // Header with logo
-      try {
-        const logoResponse = await fetch('/assets/images/logo.png');
-        const logoBlob = await logoResponse.blob();
-        const logoDataUrl = await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.readAsDataURL(logoBlob);
-        });
-        pdf.addImage(logoDataUrl, 'PNG', 15, 10, 25, 25);
-      } catch (e) {
-        pdf.setFontSize(16);
-        pdf.setTextColor('#2563EB');
-        pdf.text('WorkPulse', 15, 25);
-      }
-
-      // Title
-      pdf.setFontSize(14);
+      // Header
+      pdf.setFontSize(16);
       pdf.setTextColor('#1E293B');
-      pdf.text('Report Details', 45, 20);
+      pdf.text('WorkPulse Report', 15, 20);
 
-      // Subtitle
       pdf.setFontSize(10);
       pdf.setTextColor('#94A3B8');
       const dateStr = new Date().toLocaleDateString('en-US', { 
@@ -278,26 +311,21 @@ const ReportView = () => {
         hour: '2-digit',
         minute: '2-digit'
       });
-      pdf.text(`Generated: ${dateStr}`, 45, 27);
+      pdf.text(`Generated: ${dateStr}`, 15, 27);
 
-      // Separator line
       pdf.setDrawColor('#E2E8F0');
       pdf.line(15, 33, pdfWidth - 15, 33);
 
-      // Add the content
       const margin = 15;
       const imgWidth = pdfWidth - (margin * 2);
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       
-      // Check if content fits on one page
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const availableHeight = pageHeight - 45; // Leave space for footer
+      const availableHeight = pageHeight - 45;
       
       if (imgHeight <= availableHeight) {
-        // Content fits on one page
         pdf.addImage(imgData, 'PNG', margin, 38, imgWidth, imgHeight);
       } else {
-        // Content needs multiple pages
         let remainingHeight = imgHeight;
         let yPosition = 38;
         let pageNum = 1;
@@ -311,8 +339,6 @@ const ReportView = () => {
           if (pageNum > 1) {
             pdf.addPage();
             yPosition = 15;
-            
-            // Add header on subsequent pages
             pdf.setFontSize(12);
             pdf.setTextColor('#1E293B');
             pdf.text('Report Details (continued)', 15, 20);
@@ -335,11 +361,10 @@ const ReportView = () => {
             sourceHeight
           );
 
-          // Footer
           pdf.setFontSize(8);
           pdf.setTextColor('#94A3B8');
           pdf.text(
-            `WorkPulse - Confidential Report | Page ${pageNum} of ${totalPages}`, 
+            `Confidential Report | Page ${pageNum} of ${totalPages}`, 
             pdfWidth / 2, 
             pdf.internal.pageSize.getHeight() - 10, 
             { align: 'center' }
@@ -350,12 +375,11 @@ const ReportView = () => {
         }
       }
 
-      // Add final footer if only one page
       if (imgHeight <= availableHeight) {
         pdf.setFontSize(8);
         pdf.setTextColor('#94A3B8');
         pdf.text(
-          'WorkPulse - Confidential Report | Page 1 of 1', 
+          'Confidential Report | Page 1 of 1', 
           pdfWidth / 2, 
           pdf.internal.pageSize.getHeight() - 10, 
           { align: 'center' }
@@ -373,10 +397,8 @@ const ReportView = () => {
     }
   };
 
-  // ============================================
+ 
   // HELPERS
-  // ============================================
-
   const getStatusLabel = (status) => {
     const labels = {
       submitted: 'Submitted',
@@ -397,23 +419,11 @@ const ReportView = () => {
     return icons[status] || null;
   };
 
-  const getStatusColor = (status) => {
-    const colors = {
-      submitted: '#10B981',
-      pending: '#F59E0B',
-      draft: '#94A3B8',
-      late: '#EF4444',
-    };
-    return colors[status] || '#94A3B8';
-  };
-
   const canEdit = report?.status === 'draft' || report?.status === 'pending';
   const canSubmit = report?.status === 'draft' || report?.status === 'pending';
 
-  // ============================================
-  // RENDER
-  // ============================================
 
+  // RENDER
   if (loading) {
     return (
       <Container maxWidth="lg" sx={{ py: 8, display: 'flex', justifyContent: 'center', flexDirection: 'column', alignItems: 'center' }}>
@@ -493,6 +503,12 @@ const ReportView = () => {
                 variant="outlined"
                 sx={{ borderRadius: '6px' }}
               />
+              <Chip
+                label={`Report ID: ${report.report_id || 'N/A'}`}
+                size="small"
+                variant="outlined"
+                sx={{ borderRadius: '6px', fontSize: '10px' }}
+              />
               <StatusChip
                 icon={getStatusIcon(report.status)}
                 label={getStatusLabel(report.status)}
@@ -502,7 +518,7 @@ const ReportView = () => {
             </Box>
           </Box>
         </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
           {canEdit && (
             <Button
               variant="outlined"
@@ -522,12 +538,9 @@ const ReportView = () => {
           {canSubmit && (
             <Button
               variant="contained"
-              startIcon={<Send />}
-              onClick={() => {
-                if (window.confirm('Submit this report? You won\'t be able to edit it after submission.')) {
-                  // Handle submit
-                }
-              }}
+              startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : <Send />}
+              onClick={handleSubmit}
+              disabled={submitting}
               sx={{
                 borderRadius: '10px',
                 textTransform: 'none',
@@ -537,7 +550,7 @@ const ReportView = () => {
                 },
               }}
             >
-              Submit
+              {submitting ? 'Submitting...' : 'Submit'}
             </Button>
           )}
           <Tooltip title="Download PDF">
@@ -594,6 +607,10 @@ const ReportView = () => {
                           <InfoLabel>Week</InfoLabel>
                           <InfoValue>{report.week_number || 'N/A'}, {report.year || 'N/A'}</InfoValue>
                         </InfoRow>
+                        <InfoRow>
+                          <InfoLabel>Report ID</InfoLabel>
+                          <InfoValue>{report.report_id || 'N/A'}</InfoValue>
+                        </InfoRow>
                       </DetailCard>
                     </Grid>
                     <Grid item xs={12} sm={6}>
@@ -620,6 +637,14 @@ const ReportView = () => {
                             size="small"
                           />
                         </InfoRow>
+                        {report.submitted_at && (
+                          <InfoRow>
+                            <InfoLabel>Submitted</InfoLabel>
+                            <InfoValue>
+                              {new Date(report.submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </InfoValue>
+                          </InfoRow>
+                        )}
                       </DetailCard>
                     </Grid>
                   </Grid>
@@ -697,6 +722,39 @@ const ReportView = () => {
                   )}
                 </Box>
 
+                {/* Links */}
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="h6" fontWeight={600} color="#1E293B" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <LinkIcon sx={{ color: '#3B82F6' }} />
+                    Related Links
+                    <Chip 
+                      label={report.links?.length || 0} 
+                      size="small" 
+                      sx={{ ml: 1, bgcolor: 'rgba(59,130,246,0.08)', color: '#3B82F6', fontWeight: 600 }} 
+                    />
+                  </Typography>
+                  {report.links && report.links.length > 0 ? (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {report.links.map((link, idx) => (
+                        <LinkChip
+                          key={idx}
+                          label={link.length > 50 ? `${link.substring(0, 50)}...` : link}
+                          icon={<LinkIcon sx={{ fontSize: 14 }} />}
+                          component="a"
+                          href={link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          clickable
+                        />
+                      ))}
+                    </Box>
+                  ) : (
+                    <Typography color="#94A3B8" sx={{ fontStyle: 'italic' }}>
+                      No links provided
+                    </Typography>
+                  )}
+                </Box>
+
                 {/* Notes */}
                 {report.notes && (
                   <Box>
@@ -755,6 +813,13 @@ const ReportView = () => {
                       {report.blockers?.length || 0}
                     </Typography>
                   </Box>
+                  <Divider />
+                  <Box>
+                    <Typography variant="caption" color="#94A3B8">Links Count</Typography>
+                    <Typography variant="h6" fontWeight={700} color="#3B82F6">
+                      {report.links?.length || 0}
+                    </Typography>
+                  </Box>
                 </Stack>
               </CardContent>
             </Card>
@@ -787,12 +852,9 @@ const ReportView = () => {
                     <Button
                       fullWidth
                       variant="contained"
-                      startIcon={<Send />}
-                      onClick={() => {
-                        if (window.confirm('Submit this report? You won\'t be able to edit it after submission.')) {
-                          // Handle submit
-                        }
-                      }}
+                      startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : <Send />}
+                      onClick={handleSubmit}
+                      disabled={submitting}
                       sx={{
                         borderRadius: '10px',
                         textTransform: 'none',
@@ -800,7 +862,7 @@ const ReportView = () => {
                         background: 'linear-gradient(135deg, #10B981, #059669)',
                       }}
                     >
-                      Submit Report
+                      {submitting ? 'Submitting...' : 'Submit Report'}
                     </Button>
                   )}
                   <Button
@@ -816,9 +878,6 @@ const ReportView = () => {
                       background: 'linear-gradient(135deg, #EF4444, #DC2626)',
                       '&:hover': {
                         background: 'linear-gradient(135deg, #DC2626, #B91C1C)',
-                      },
-                      '&:disabled': {
-                        background: '#CBD5E1',
                       },
                     }}
                   >

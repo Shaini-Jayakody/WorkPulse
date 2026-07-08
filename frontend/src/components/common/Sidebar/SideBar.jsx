@@ -33,10 +33,7 @@ import {
 } from '@mui/icons-material';
 
 
-// ============================================
 // STYLED COMPONENTS
-// ============================================
-
 const SidebarHeader = styled(Box)({
   display: 'flex',
   alignItems: 'center',
@@ -158,10 +155,8 @@ const LoadingWrapper = styled(Box)({
   width: '100%',
 });
 
-// ============================================
-// COMPONENT
-// ============================================
 
+// COMPONENT
 const Sidebar = ({ 
   open, 
   user, 
@@ -233,7 +228,7 @@ const Sidebar = ({
       path: '/profile',
       roles: ['team_member', 'manager', 'admin', 'super_admin'],
     },
-    // ❌ Settings removed
+  
   ];
 
   // Super Admin specific nav items

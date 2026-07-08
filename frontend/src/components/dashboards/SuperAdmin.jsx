@@ -213,10 +213,8 @@ const SuperAdminDashboard = () => {
     return getWeeksInMonth(selectedMonth, selectedYear);
   }, [selectedMonth, selectedYear]);
 
-  // ============================================
-  // FETCH DATA FROM BACKEND
-  // ============================================
 
+  // FETCH DATA FROM BACKEND
   const loadAllData = async () => {
     setLoading(true);
     setError('');
@@ -304,10 +302,8 @@ const SuperAdminDashboard = () => {
     loadAllData();
   }, [viewType, selectedMonth, selectedYear, selectedWeekInMonth]);
 
-  // ============================================
+  
   // PDF EXPORT
-  // ============================================
-
   const exportToPDF = async () => {
     setExporting(true);
     try {
@@ -365,10 +361,8 @@ const SuperAdminDashboard = () => {
     }
   };
 
-  // ============================================
+  
   // DATA PROCESSING
-  // ============================================
-
   const userStats = useMemo(() => {
     const total = users.length;
     const active = users.filter(u => u.isActive).length;
