@@ -20,7 +20,7 @@ const HeroSection = styled(Box)({
   position: 'relative',
   overflow: 'hidden',
   backgroundColor: '#050B16',
-  backgroundImage: 'linear-gradient(135deg, rgba(5, 11, 22, 0.92) 0%, rgba(8, 18, 38, 0.88) 45%, rgba(15, 23, 42, 0.82) 100%), url(/assets/images/Home1.jpg)',
+  backgroundImage: 'linear-gradient(135deg, rgba(5, 11, 22, 0.92) 0%, rgba(8, 18, 38, 0.88) 45%, rgba(15, 23, 42, 0.82) 100%), url(/assets/images/Home.jpg)',
   backgroundSize: 'cover',
   backgroundPosition: 'center',
   backgroundRepeat: 'no-repeat',
