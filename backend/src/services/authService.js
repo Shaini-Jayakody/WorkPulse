@@ -15,12 +15,16 @@ const canAssignRole = (currentRole, targetRole) => {
     return [ROLES.MANAGER, ROLES.TEAM_MEMBER].includes(targetRole);
   }
 
-  return True;
+  return false;
 };
 
 const getApprovalStatusForRole = (role, hasActiveManager) => {
   if (role === ROLES.MANAGER) {
     return APPROVAL_STATUS.PENDING_ADMIN;
+  }
+
+  if (role === ROLES.ADMIN) {
+    return APPROVAL_STATUS.PENDING_SUPER_ADMIN;
   }
 
   if (role === ROLES.TEAM_MEMBER) {
@@ -368,7 +372,13 @@ class AuthService {
 
   async getPendingApprovals(user) {
     const query = {
-      approval_status: { $in: [APPROVAL_STATUS.PENDING_MANAGER, APPROVAL_STATUS.PENDING_ADMIN] }
+      approval_status: {
+        $in: [
+          APPROVAL_STATUS.PENDING_MANAGER,
+          APPROVAL_STATUS.PENDING_ADMIN,
+          APPROVAL_STATUS.PENDING_SUPER_ADMIN,
+        ]
+      }
     };
 
     if (user.role === ROLES.MANAGER) {
@@ -383,6 +393,7 @@ class AuthService {
 
     if (user.role === ROLES.SUPER_ADMIN) {
       query.role = { $in: [ROLES.TEAM_MEMBER, ROLES.MANAGER, ROLES.ADMIN] };
+      query.approval_status = APPROVAL_STATUS.PENDING_SUPER_ADMIN;
     }
 
     const users = await User.find(query).select('-password -__v').sort({ createdAt: -1 });

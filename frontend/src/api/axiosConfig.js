@@ -2,14 +2,21 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api
 
 const request = async (method, path, body) => {
   const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+  const token = localStorage.getItem('token');
+
+  const headers = isFormData
+    ? {}
+    : {
+        'Content-Type': 'application/json',
+      };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method,
-    headers: isFormData
-      ? undefined
-      : {
-          'Content-Type': 'application/json',
-        },
+    headers,
     body: body == null ? undefined : isFormData ? body : JSON.stringify(body),
   });
 

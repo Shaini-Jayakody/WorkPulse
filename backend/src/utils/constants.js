@@ -15,6 +15,7 @@ const ROLE_HIERARCHY = {
 const APPROVAL_STATUS = {
   PENDING_MANAGER: 'pending_manager_approval',
   PENDING_ADMIN: 'pending_admin_approval',
+  PENDING_SUPER_ADMIN: 'pending_super_admin_approval',
   APPROVED: 'approved',
   REJECTED: 'rejected',
   DEACTIVATED: 'deactivated'

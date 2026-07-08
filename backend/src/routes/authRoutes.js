@@ -31,11 +31,13 @@ router.post('/users/:userId/approve', hasMinimumRole('manager'), authController.
 router.post('/users/:userId/reject', hasMinimumRole('manager'), authController.rejectUser);
 
 // Admin/Manager only routes
+router.post('/users/create', hasMinimumRole('admin'), authController.createUser);
 router.get('/users', hasMinimumRole('manager'), authController.getAllUsers);
 router.get('/users/search', hasMinimumRole('manager'), authController.searchUsers);
 router.get('/users/:id', hasMinimumRole('manager'), authController.getUserById);
 router.put('/users/role', hasMinimumRole('admin'), authController.updateUserRole);
-router.put('/users/:userId/deactivate', hasMinimumRole('manager'), authController.deactivateUser);
-router.put('/users/:userId/activate', hasMinimumRole('manager'), authController.activateUser);
+router.put('/users/:userId/deactivate', hasMinimumRole('admin'), authController.deactivateUser);
+router.put('/users/:userId/activate', hasMinimumRole('admin'), authController.activateUser);
+router.delete('/users/:userId', hasMinimumRole('admin'), authController.deleteUser);
 
 module.exports = router;

@@ -4,6 +4,7 @@ const User = require('../models/User');
 const cloudinary = require('../config/cloudinary');
 const { Readable } = require('stream');
 const { ROLES } = require('../utils/constants');
+const { APPROVAL_STATUS } = require('../utils/constants');
 
 // Upload profile picture to Cloudinary
 const uploadProfilePictureToCloudinary = (fileBuffer, userId) => {
@@ -27,6 +28,25 @@ const uploadProfilePictureToCloudinary = (fileBuffer, userId) => {
 
     Readable.from([fileBuffer]).pipe(uploadStream);
   });
+};
+
+const buildCredentialsMailtoUrl = ({ to, name, password, role, teamNo, createdBy }) => {
+  const senderName = [createdBy?.first_name, createdBy?.last_name].filter(Boolean).join(' ') || 'WorkPulse Super Admin';
+  const subject = 'Your WorkPulse account has been created';
+  const body = [
+    `Hello ${name},`,
+    '',
+    `Your WorkPulse account has been created by ${senderName}.`,
+    '',
+    `Email: ${to}`,
+    `Password: ${password}`,
+    `Role: ${role}`,
+    `Team No: ${teamNo || '-'}`,
+    '',
+    'Please log in and change your password after your first sign in.',
+  ].join('\n');
+
+  return `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 };
 
 class AuthController {
@@ -77,6 +97,86 @@ class AuthController {
           ? 'User registered successfully'
           : 'Registration submitted successfully and is pending approval',
         data: result
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Create user by admin/super admin
+  async createUser(req, res, next) {
+    try {
+      const creator = req.user;
+      const {
+        first_name,
+        last_name,
+        email,
+        password,
+        role,
+        contact_no,
+        birthday,
+        gender,
+        address,
+        team_no
+      } = req.body;
+
+      if (!['admin', 'super_admin'].includes(creator.role)) {
+        throw new AppError('Only admins and super admins can create users', 403);
+      }
+
+      if (role === ROLES.ADMIN && creator.role !== ROLES.SUPER_ADMIN) {
+        throw new AppError('Only super admins can create admin accounts', 403);
+      }
+
+      if (!['team_member', 'manager', 'admin'].includes(role)) {
+        throw new AppError('Invalid role specified', 400);
+      }
+
+      const normalizedEmail = email.toLowerCase();
+
+      const existingUser = await User.findOne({ email: normalizedEmail });
+      if (existingUser) {
+        throw new AppError('User already exists with this email', 409);
+      }
+
+      const existingContact = await User.findOne({ contact_no });
+      if (existingContact) {
+        throw new AppError('Contact number already registered', 409);
+      }
+
+      const user = new User({
+        first_name,
+        last_name,
+        email: normalizedEmail,
+        password,
+        role,
+        contact_no,
+        birthday,
+        gender,
+        address,
+        team_no,
+        approval_status: APPROVAL_STATUS.APPROVED,
+        isActive: true,
+        approved_by: creator._id,
+        approved_at: new Date(),
+        rejection_reason: '',
+      });
+
+      await user.save();
+
+      const mailtoUrl = buildCredentialsMailtoUrl({
+        to: normalizedEmail,
+        name: `${first_name} ${last_name}`,
+        password,
+        role,
+        teamNo: team_no,
+        createdBy: creator,
+      });
+
+      res.status(201).json({
+        success: true,
+        message: 'User created successfully. Your mail client has been prepared with the credentials draft.',
+        data: { user: user.getPublicProfile(), mailtoUrl }
       });
     } catch (error) {
       next(error);
@@ -263,6 +363,22 @@ class AuthController {
         user.team_no = teamNo;
       }
 
+      if (role === ROLES.ADMIN) {
+        user.approval_status = 'pending_super_admin_approval';
+        user.isActive = false;
+        user.approved_by = null;
+        user.approved_at = null;
+        user.rejection_reason = '';
+        user.role = role;
+        await user.save();
+
+        return res.status(200).json({
+          success: true,
+          message: 'Admin registration submitted for super admin approval',
+          data: { user: user.getPublicProfile() }
+        });
+      }
+
       user.role = role;
       user.approval_status = 'approved';
       user.isActive = true;
@@ -325,6 +441,35 @@ class AuthController {
         success: true,
         message: 'User activated successfully',
         data: { user: user.getPublicProfile() }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Delete user (admin/super admin only)
+  async deleteUser(req, res, next) {
+    try {
+      const { userId } = req.params;
+
+      if (req.user._id.toString() === userId) {
+        throw new AppError('You cannot delete your own account', 400);
+      }
+
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new AppError('User not found', 404);
+      }
+
+      if (user.role === ROLES.SUPER_ADMIN) {
+        throw new AppError('Super admin accounts cannot be deleted', 403);
+      }
+
+      await user.deleteOne();
+
+      res.status(200).json({
+        success: true,
+        message: 'User deleted successfully'
       });
     } catch (error) {
       next(error);
