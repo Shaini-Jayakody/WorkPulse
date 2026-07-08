@@ -2,205 +2,410 @@ import React, { useState, useEffect } from 'react';
 
 const AppLoader = () => {
   const [progress, setProgress] = useState(0);
-  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+  const [fadeOut, setFadeOut] = useState(false);
+  const [logoVisible, setLogoVisible] = useState(false);
 
   const messages = [
-    'Loading your workspace...',
-    'Fetching your data...',
-    'Getting things ready...',
-    'Almost there...',
-    'Welcome!'
+    { text: 'Loading your workspace...', icon: '◈' },
+    { text: 'Fetching your data...', icon: '◈' },
+    { text: 'Getting things ready...', icon: '◈' },
+    { text: 'Almost there...', icon: '◈' },
+    { text: 'Welcome!', icon: '◈' }
   ];
 
   useEffect(() => {
-    // Progress bar animation
+    setTimeout(() => setLogoVisible(true), 100);
+
     const progressTimer = setInterval(() => {
       setProgress(prev => {
         if (prev >= 100) {
           clearInterval(progressTimer);
+          setTimeout(() => setFadeOut(true), 300);
           return 100;
         }
-        return Math.min(prev + Math.random() * 8 + 2, 100);
+        const increment = prev < 30 ? 3 : prev < 60 ? 4 : prev < 85 ? 5 : 2.5;
+        return Math.min(prev + increment + Math.random() * 2, 100);
       });
-    }, 200);
+    }, 80);
 
-    // Message rotation
-    const messageTimer = setInterval(() => {
-      setCurrentMessageIndex(prev => {
-        const nextIndex = (prev + 1) % messages.length;
-        // Stop at "Welcome!" when progress is high
-        if (progress > 90 && nextIndex === messages.length - 1) {
-          return nextIndex;
-        }
-        if (progress > 90) {
-          return messages.length - 1;
-        }
-        return nextIndex;
-      });
-    }, 1500);
+    return () => clearInterval(progressTimer);
+  }, []);
 
-    return () => {
-      clearInterval(progressTimer);
-      clearInterval(messageTimer);
-    };
-  }, [progress, messages.length]);
-
-  // Get current message
-  const getCurrentMessage = () => {
-    if (progress < 25) return messages[0];
-    if (progress < 50) return messages[1];
-    if (progress < 75) return messages[2];
-    if (progress < 95) return messages[3];
+  const currentMessage = () => {
+    if (progress < 20) return messages[0];
+    if (progress < 40) return messages[1];
+    if (progress < 60) return messages[2];
+    if (progress < 85) return messages[3];
     return messages[4];
   };
 
+  const message = currentMessage();
+
+  // Generate bar chart data
+  const generateBars = () => {
+    const bars = [];
+    const numBars = 12;
+    const completedBars = Math.floor((progress / 100) * numBars);
+    
+    for (let i = 0; i < numBars; i++) {
+      const isCompleted = i < completedBars;
+      const isPartial = i === completedBars && progress < 100;
+      const height = isCompleted ? 80 + Math.random() * 20 : 
+                     isPartial ? (progress % (100 / numBars)) / (100 / numBars) * 100 : 
+                     30 + Math.random() * 20;
+      bars.push({
+        isCompleted,
+        isPartial,
+        height: Math.min(Math.max(height, 20), 100)
+      });
+    }
+    return bars;
+  };
+
+  const bars = generateBars();
+
   return (
-    <div className="app-loader" style={{
+    <div style={{
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
       height: '100vh',
-      backgroundColor: '#F8FAFC',
+      backgroundColor: '#F0F4FF',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       padding: '20px',
-      animation: 'fadeIn 0.5s ease-out',
-      position: 'relative'
+      position: 'relative',
+      overflow: 'hidden',
+      opacity: fadeOut ? 0 : 1,
+      transition: 'opacity 0.4s ease'
     }}>
-      {/* Background Decorative Circles */}
+      
+      {/* Blue Gradient Background */}
       <div style={{
         position: 'absolute',
-        width: '300px',
-        height: '300px',
-        borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(99,102,241,0.05) 0%, transparent 70%)',
-        top: '-100px',
-        right: '-100px',
-        pointerEvents: 'none'
-      }} />
-      <div style={{
-        position: 'absolute',
-        width: '200px',
-        height: '200px',
-        borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(139,92,246,0.05) 0%, transparent 70%)',
-        bottom: '-50px',
-        left: '-50px',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: `
+          radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.08) 0%, transparent 60%),
+          radial-gradient(circle at 80% 70%, rgba(37, 99, 235, 0.06) 0%, transparent 50%),
+          radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.05) 0%, transparent 70%)
+        `,
         pointerEvents: 'none'
       }} />
 
-      {/* Logo / Icon Container */}
-       {/* Logo Image - Large, No Frame */}
-      <img 
-        src="/assets/images/logo.png" 
-        alt="WorkPulse Logo"
-        style={{
-          width: 300,
-          height: 300,
-          objectFit: 'contain',
-          marginBottom: 28,
-          animation: 'pulse 1.5s ease-in-out infinite'
-        }}
-      />
-
-
-      {/* Brand Name */}
-      <h1 style={{
-        fontSize: 32,
-        fontWeight: 700,
-        color: '#1E293B',
-        margin: 0,
-        marginBottom: 4,
-        letterSpacing: '-0.5px'
-      }}>
-        WorkPulse
-      </h1>
-
-      {/* Tagline */}
-      <p style={{
-        fontSize: 14,
-        color: '#1d3658',
-        margin: 0,
-        marginBottom: 36,
-        fontWeight: 400,
-        letterSpacing: '0.3px'
-      }}>
-        The Pulse of the Team
-      </p>
-
-      {/* Progress Bar Container */}
+      {/* Floating Blue Shapes */}
       <div style={{
-        width: 340,
-        maxWidth: '90%',
-        height: 6,
-        backgroundColor: '#E2E8F0',
-        borderRadius: 4,
-        overflow: 'hidden',
+        position: 'absolute',
+        top: '12%',
+        left: '6%',
+        width: 70,
+        height: 70,
+        borderRadius: '50%',
+        background: 'rgba(59, 130, 246, 0.05)',
+        animation: 'floatShape 7s ease-in-out infinite'
+      }} />
+      <div style={{
+        position: 'absolute',
+        bottom: '18%',
+        right: '8%',
+        width: 90,
+        height: 90,
+        borderRadius: '50%',
+        background: 'rgba(37, 99, 235, 0.04)',
+        animation: 'floatShape 9s ease-in-out infinite reverse'
+      }} />
+
+      {/* Main Content */}
+      <div style={{
         position: 'relative',
-        boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.05)'
+        zIndex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        maxWidth: '480px',
+        width: '100%'
       }}>
-        {/* Progress Bar Fill */}
+        
+        {/* Logo Section */}
         <div style={{
-          width: `${progress}%`,
-          height: '100%',
-          background: 'linear-gradient(90deg, #6366F1 0%, #8B5CF6 50%, #EC4899 100%)',
-          borderRadius: 4,
-          transition: 'width 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
           position: 'relative',
-          boxShadow: '0 0 10px rgba(99,102,241,0.3)'
+          marginBottom: 20,
+          opacity: logoVisible ? 1 : 0,
+          transform: logoVisible ? 'scale(1)' : 'scale(0.85)',
+          transition: 'opacity 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
         }}>
-          {/* Glow effect */}
+          {/* Blue Glow */}
           <div style={{
             position: 'absolute',
-            top: 0,
-            right: 0,
-            width: 20,
-            height: '100%',
-            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3))',
-            borderRadius: 4
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 280,
+            height: 280,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(59, 130, 246, 0.10) 0%, transparent 70%)',
+            animation: 'glowPulse 2s ease-in-out infinite'
+          }} />
+
+          {/* Blue Rotating Ring */}
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 230,
+            height: 230,
+            borderRadius: '50%',
+            padding: 3,
+            background: 'conic-gradient(from 0deg, #3B82F6, #6366F1, #2563EB, #3B82F6)',
+            animation: 'rotateRing 4s linear infinite',
+            WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 3px), #fff calc(100% - 3px))',
+            mask: 'radial-gradient(farthest-side, transparent calc(100% - 3px), #fff calc(100% - 3px))'
+          }} />
+
+          {/* Logo */}
+          <img 
+            src="/assets/images/logo.png" 
+            alt="WorkPulse"
+            style={{
+              width: 300,
+              height: 300,
+              objectFit: 'contain',
+              display: 'block',
+              position: 'relative',
+              zIndex: 2,
+              filter: 'drop-shadow(0 8px 30px rgba(59, 130, 246, 0.15))',
+              animation: 'logoFloat 3s ease-in-out infinite'
+            }}
+          />
+        </div>
+
+        {/* Brand Name */}
+        <h1 style={{
+          fontSize: 28,
+          fontWeight: 700,
+          background: 'linear-gradient(135deg, #2563EB 0%, #3B82F6 40%, #6366F1 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          margin: 0,
+          marginBottom: 2,
+          letterSpacing: '1px',
+          opacity: logoVisible ? 1 : 0,
+          transform: logoVisible ? 'translateY(0)' : 'translateY(15px)',
+          transition: 'opacity 0.5s ease 0.1s, transform 0.5s ease 0.1s'
+        }}>
+          WorkPulse
+        </h1>
+
+        <p style={{
+          fontSize: 13,
+          color: '#64748B',
+          margin: 0,
+          marginBottom: 28,
+          fontWeight: 400,
+          letterSpacing: '3px',
+          textTransform: 'uppercase',
+          opacity: logoVisible ? 1 : 0,
+          transform: logoVisible ? 'translateY(0)' : 'translateY(15px)',
+          transition: 'opacity 0.5s ease 0.2s, transform 0.5s ease 0.2s'
+        }}>
+          The Pulse of the Team
+        </p>
+
+        {/* Progress Label */}
+        
+        <div style={{
+          width: '100%',
+          opacity: logoVisible ? 1 : 0,
+          transition: 'opacity 0.5s ease 0.3s'
+        }}>
+          {/* Bar Chart Container */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'space-between',
+            height: 80,
+            gap: 4,
+            padding: '0 4px',
+            marginBottom: 12
+          }}>
+            {bars.map((bar, index) => (
+              <div
+                key={index}
+                style={{
+                  flex: 1,
+                  height: `${bar.height}%`,
+                  minHeight: 4,
+                  borderRadius: '3px 3px 0 0',
+                  background: bar.isCompleted 
+                    ? 'linear-gradient(180deg, #3B82F6, #6366F1)'
+                    : bar.isPartial
+                      ? 'linear-gradient(180deg, #93C5FD, #BFDBFE)'
+                      : '#E2E8F0',
+                  transition: 'height 0.3s ease, background 0.3s ease',
+                  position: 'relative',
+                  opacity: bar.isCompleted ? 1 : bar.isPartial ? 0.8 : 0.5,
+                  boxShadow: bar.isCompleted ? '0 2px 8px rgba(59, 130, 246, 0.2)' : 'none'
+                }}
+              >
+                {/* Shimmer on active bars */}
+                {bar.isCompleted && (
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    borderRadius: '3px 3px 0 0',
+                    background: 'linear-gradient(180deg, rgba(255,255,255,0.2), transparent)',
+                    animation: 'barShimmer 1.5s ease-in-out infinite'
+                  }} />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Progress Label */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10
+            }}>
+              <span style={{
+                color: '#3B82F6',
+                fontSize: 14,
+                fontWeight: 500
+              }}>
+                {message.icon}
+              </span>
+              <span style={{
+                color: '#475569',
+                fontSize: 14,
+                fontWeight: 400
+              }}>
+                {message.text}
+              </span>
+            </div>
+            <span style={{
+              fontSize: 16,
+              fontWeight: 700,
+              color: '#3B82F6',
+              background: 'rgba(59, 130, 246, 0.08)',
+              padding: '2px 16px',
+              borderRadius: 20,
+              minWidth: '50px',
+              textAlign: 'center'
+            }}>
+              {Math.round(progress)}%
+            </span>
+          </div>
+        </div>
+
+        {/* Loading Dots */}
+        <div style={{
+          display: 'flex',
+          gap: 10,
+          marginTop: 24,
+          opacity: logoVisible ? 1 : 0,
+          transition: 'opacity 0.5s ease 0.4s'
+        }}>
+          {[...Array(3)].map((_, i) => (
+            <div
+              key={i}
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #3B82F6, #6366F1)',
+                animation: 'dotBounce 1s ease-in-out infinite',
+                animationDelay: `${i * 0.15}s`
+              }}
+            />
+          ))}
+        </div>
+
+        {/*Footer quote */}
+        
+        <div style={{
+          position: 'absolute',
+          bottom: 30,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+          opacity: 0.5,
+          transition: 'opacity 0.5s ease 0.5s'
+        }}>
+          <span style={{
+            width: 30,
+            height: 1,
+            background: 'linear-gradient(90deg, transparent, #3B82F6)'
+          }} />
+          <p style={{
+            fontSize: 13,
+            color: '#3B82F6',
+            fontWeight: 500,
+            margin: 0,
+            letterSpacing: '1px'
+          }}>
+            One team, one pulse.
+          </p>
+          <span style={{
+            width: 30,
+            height: 1,
+            background: 'linear-gradient(90deg, #3B82F6, transparent)'
           }} />
         </div>
       </div>
 
-      {/* Loading Message */}
-      <p style={{
-        fontSize: 14,
-        color: '#94A3B8',
-        marginTop: 16,
-        fontWeight: 500,
-        minHeight: '24px',
-        transition: 'opacity 0.3s ease'
-      }}>
-        {getCurrentMessage()}
-        <span className="loading-dot" style={{ marginLeft: 2 }}>.</span>
-        <span className="loading-dot" style={{ marginLeft: 2 }}>.</span>
-        <span className="loading-dot" style={{ marginLeft: 2 }}>.</span>
-      </p>
+      {/* CSS Animations */}
+      <style>
+        {`
+          @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+          }
 
-      {/* Percentage */}
-      <p style={{
-        fontSize: 13,
-        color: '#94A3B8',
-        marginTop: 6,
-        fontWeight: 600,
-        letterSpacing: '0.5px'
-      }}>
-        {Math.round(progress)}%
-      </p>
+          @keyframes barShimmer {
+            0% { opacity: 0.3; }
+            50% { opacity: 0.8; }
+            100% { opacity: 0.3; }
+          }
 
-      {/* Footer Quote */}
-      <p style={{
-        position: 'absolute',
-        bottom: 40,
-        fontSize: 13,
-        color: '#3b516f',
-        fontStyle: 'italic',
-        textAlign: 'center',
-        maxWidth: 400,
-        padding: '0 20px'
-      }}>
-        "One team under one pulse."
-      </p>
+          @keyframes glowPulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.4; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.8; }
+          }
+
+          @keyframes rotateRing {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+          }
+
+          @keyframes logoFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-6px); }
+          }
+
+          @keyframes dotBounce {
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
+            40% { transform: scale(1); opacity: 1; }
+          }
+
+          @keyframes floatShape {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(20px, -20px) scale(1.1); }
+          }
+        `}
+      </style>
     </div>
   );
 };
