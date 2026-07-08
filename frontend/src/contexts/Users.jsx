@@ -55,10 +55,7 @@ import {
 } from '@mui/icons-material';
 import api from '../api/axiosConfig';
 
-// ============================================
 // STYLED COMPONENTS - Matching WorkPulse Theme
-// ============================================
-
 const UserCard = styled(Card)({
   borderRadius: '16px',
   border: '1px solid rgba(226, 232, 240, 0.8)',
@@ -147,10 +144,8 @@ const RoleChip = styled(Chip)(({ rolecolor }) => ({
   border: `1px solid ${rolecolor}25`,
 }));
 
-// ============================================
-// COMPONENT
-// ============================================
 
+// COMPONENT
 const Users = () => {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
@@ -202,10 +197,8 @@ const Users = () => {
     loadCurrentUser();
   }, []);
 
-  // ============================================
+ 
   // USER MANAGEMENT FUNCTIONS
-  // ============================================
-
   const handleApprove = async (userId) => {
     setActionLoading(userId);
     setError('');
@@ -326,10 +319,8 @@ const Users = () => {
     }
   };
 
-  // ============================================
-  // DIALOG HANDLERS
-  // ============================================
 
+  // DIALOG HANDLERS
   const openActionDialog = (action, user) => {
     setSelectedUser(user);
     setDialogAction(action);
@@ -368,10 +359,8 @@ const Users = () => {
     setSelectedUser(null);
   };
 
-  // ============================================
-  // FILTERS & HELPERS
-  // ============================================
 
+  // FILTERS & HELPERS
   const getStatus = (user) => {
     if (!user.isActive) return 'inactive';
     if (user.approval_status === 'pending' || 
@@ -458,10 +447,8 @@ const Users = () => {
     return colors[dialogAction] || '#3B82F6';
   };
 
-  // ============================================
-  // FILTERS
-  // ============================================
 
+  // FILTERS
   const filteredUsers = useMemo(() => {
     let filtered = [...users];
 
@@ -494,10 +481,8 @@ const Users = () => {
     return filtered;
   }, [users, search, roleFilter, statusFilter]);
 
-  // ============================================
-  // STATS
-  // ============================================
 
+  // STATS
   const stats = {
     total: users.length,
     active: users.filter(u => u.isActive && u.approval_status === 'approved').length,
@@ -851,7 +836,7 @@ const Users = () => {
                             </Button>
                           )}
 
-                          {/* ✅ Activate - Only for inactive users */}
+                          {/* Activate - Only for inactive users */}
                           {isInactive && user.approval_status === 'approved' && (
                             <Button
                               variant="contained"
@@ -870,7 +855,7 @@ const Users = () => {
                             </Button>
                           )}
 
-                          {/* ✅ Deactivate - Only for active users */}
+                          {/*Deactivate - Only for active users */}
                           {canDeactivate(user) && isActive && (
                             <Button
                               variant="outlined"

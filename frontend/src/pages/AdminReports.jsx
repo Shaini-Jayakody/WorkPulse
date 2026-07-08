@@ -56,10 +56,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import api from '../api/axiosConfig';
 
-// ============================================
 // STYLED COMPONENTS
-// ============================================
-
 const ReportCard = styled(Card)({
   borderRadius: '16px',
   border: '1px solid rgba(226, 232, 240, 0.8)',
@@ -122,10 +119,7 @@ const SubmissionCard = styled(Card)({
   },
 });
 
-// ============================================
 // HELPER FUNCTIONS
-// ============================================
-
 const getCurrentWeek = () => {
   const now = new Date();
   const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
@@ -135,10 +129,8 @@ const getCurrentWeek = () => {
   return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
 };
 
-// ============================================
-// COMPONENT
-// ============================================
 
+// COMPONENT
 const AdminReports = () => {
   const navigate = useNavigate();
   const currentDate = new Date();
@@ -171,10 +163,8 @@ const AdminReports = () => {
   const [viewReport, setViewReport] = useState(null);
   const [openViewDialog, setOpenViewDialog] = useState(false);
 
-  // ============================================
+  
   // FETCH DATA FROM BACKEND
-  // ============================================
-
   const fetchAllData = async () => {
     setLoading(true);
     setError('');
@@ -236,10 +226,8 @@ const AdminReports = () => {
     fetchAllData();
   }, [selectedWeek, selectedYear]);
 
-  // ============================================
-  // GET UNIQUE VALUES FOR FILTERS
-  // ============================================
 
+  // GET UNIQUE VALUES FOR FILTERS
   const uniqueProjects = useMemo(() => {
     const projects = new Set();
     reports.forEach(report => {
@@ -267,10 +255,8 @@ const AdminReports = () => {
     return ['all', ...Array.from(userSet)];
   }, [reports]);
 
-  // ============================================
+ 
   // FILTER REPORTS
-  // ============================================
-
   const filteredReports = useMemo(() => {
     let filtered = [...reports];
 
@@ -307,10 +293,7 @@ const AdminReports = () => {
     return filtered;
   }, [reports, search, filters]);
 
-  // ============================================
   // HANDLERS
-  // ============================================
-
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
     setPage(1);
@@ -360,10 +343,7 @@ const AdminReports = () => {
     return icons[status] || null;
   };
 
-  // ============================================
   // VIEW REPORT HANDLER
-  // ============================================
-
   const handleViewReport = (report) => {
     setViewReport(report);
     setOpenViewDialog(true);
@@ -374,10 +354,8 @@ const AdminReports = () => {
     setViewReport(null);
   };
 
-  // ============================================
+ 
   // DOWNLOAD REPORT AS PDF
-  // ============================================
-
   const downloadReportPDF = async (report) => {
     setDownloading(true);
     
@@ -539,20 +517,15 @@ const AdminReports = () => {
     }
   };
 
-  // ============================================
   // PAGINATION
-  // ============================================
-
   const paginatedReports = useMemo(() => {
     const start = (page - 1) * rowsPerPage;
     const end = start + rowsPerPage;
     return filteredReports.slice(start, end);
   }, [filteredReports, page, rowsPerPage]);
 
-  // ============================================
-  // RENDER
-  // ============================================
 
+  // RENDER
   return (
     <Container maxWidth="xl" sx={{ py: 4, backgroundColor: '#F8FAFC', minHeight: '100vh' }}>
       {/* Header */}
@@ -981,7 +954,7 @@ const AdminReports = () => {
         </>
       )}
 
-      {/* ✅ View Report Dialog */}
+      {/*View Report Dialog */}
       <Dialog 
         open={openViewDialog} 
         onClose={handleCloseViewDialog}

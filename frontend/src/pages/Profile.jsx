@@ -38,10 +38,8 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import api from '../api/axiosConfig';
 
-// ============================================
-// STYLED COMPONENTS
-// ============================================
 
+// STYLED COMPONENTS
 const ProfileContainer = styled(Box)({
   minHeight: '100vh',
   display: 'flex',
@@ -212,10 +210,8 @@ const UploadIcon = styled(Box)({
   },
 });
 
-// ============================================
-// VALIDATION SCHEMA
-// ============================================
 
+// VALIDATION SCHEMA
 const validationSchema = Yup.object({
   first_name: Yup.string()
     .required('First name is required')
@@ -232,10 +228,8 @@ const validationSchema = Yup.object({
     .matches(/^\+?[\d\s-]{10,15}$/, 'Enter a valid contact number (10-15 digits)'),
 });
 
-// ============================================
-// COMPONENT
-// ============================================
 
+// COMPONENT
 const Profile = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);

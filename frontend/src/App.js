@@ -105,9 +105,7 @@ function App() {
           }}
         >
           <Routes>
-            {/* ============================================
-                PUBLIC ROUTES - No Sidebar
-                ============================================ */}
+            {/* PUBLIC ROUTES - No Sidebar*/}
             <Route path="/" element={<Home />} />
             <Route path="/register" element={<RegisterForm />} />
             <Route
@@ -121,9 +119,7 @@ function App() {
               }
             />
             
-            {/* ============================================
-                PROTECTED ROUTES - With Sidebar
-                ============================================ */}
+            {/* PROTECTED ROUTES - With Sidebar */}
             
             {/* Dashboard */}
             <Route 

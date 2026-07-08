@@ -19,10 +19,8 @@ import * as Yup from 'yup';
 import { Visibility, VisibilityOff, Email, Lock, ArrowBack } from '@mui/icons-material';
 import api from '../../api/axiosConfig';
 
-// ============================================
-// STYLED COMPONENTS - Matching Register Theme
-// ============================================
 
+// STYLED COMPONENTS 
 const LoginContainer = styled(Box)({
   minHeight: '100vh',
   display: 'flex',
@@ -136,9 +134,7 @@ const GradientButton = styled(Button)({
   },
 });
 
-// ============================================
 // VALIDATION SCHEMA
-// ============================================
 
 const validationSchema = Yup.object({
   email: Yup.string()
@@ -149,10 +145,8 @@ const validationSchema = Yup.object({
     .min(6, 'Password must be at least 6 characters'),
 });
 
-// ============================================
-// COMPONENT
-// ============================================
 
+// COMPONENT
 const LoginForm = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);

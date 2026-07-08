@@ -44,10 +44,8 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import api from '../../api/axiosConfig';
 
-// ============================================
-// STYLED COMPONENTS
-// ============================================
 
+// STYLED COMPONENTS
 const RegisterContainer = styled(Box)({
   minHeight: '100vh',
   display: 'flex',
@@ -257,10 +255,8 @@ const RoleCard = styled(Box)(({ selected }) => ({
   },
 }));
 
-// ============================================
-// VALIDATION SCHEMA
-// ============================================
 
+// VALIDATION SCHEMA
 const getValidationSchema = () => {
   return Yup.object({
     first_name: Yup.string()
@@ -318,10 +314,8 @@ const getValidationSchema = () => {
   });
 };
 
-// ============================================
-// COMPONENT
-// ============================================
 
+// COMPONENT
 const Register = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);

@@ -48,10 +48,8 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import api from '../../api/axiosConfig';
 
-// ============================================
-// STYLED COMPONENTS
-// ============================================
 
+// STYLED COMPONENTS
 const CreateContainer = styled(Box)({
   minHeight: '100vh',
   display: 'flex',
@@ -191,10 +189,8 @@ const RoleCard = styled(Box)(({ selected }) => ({
   },
 }));
 
-// ============================================
-// VALIDATION SCHEMA
-// ============================================
 
+// VALIDATION SCHEMA
 const validationSchema = Yup.object({
   first_name: Yup.string()
     .required('First name is required')
@@ -250,10 +246,8 @@ const validationSchema = Yup.object({
     .max(50, 'Team number cannot exceed 50 characters'),
 });
 
-// ============================================
-// COMPONENT
-// ============================================
 
+// COMPONENT
 const CreateUserForm = () => {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
