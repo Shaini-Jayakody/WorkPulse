@@ -3,8 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^9.2.0",
+    "@mui/material": "^9.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-router-dom": "^7.18.1",
     "react-scripts": "5.0.1"
   },
   "scripts": {
@@ -14,10 +19,19 @@
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
-    "extends": ["react-app"]
+    "extends": [
+      "react-app"
+    ]
   },
   "browserslist": {
-    "production": [">0.2%", "not dead", "not op_mini all"],
-    "development": ["last 1 chrome version", "last 1 firefox version"]
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version"
+    ]
   }
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const AppLoader = () => {
+const AppLoader = ({ onComplete }) => {
   const [progress, setProgress] = useState(0);
   const [fadeOut, setFadeOut] = useState(false);
   const [logoVisible, setLogoVisible] = useState(false);
@@ -20,7 +20,12 @@ const AppLoader = () => {
       setProgress(prev => {
         if (prev >= 100) {
           clearInterval(progressTimer);
+          // Start fade out
           setTimeout(() => setFadeOut(true), 300);
+          // Call onComplete after fade out
+          setTimeout(() => {
+            if (onComplete) onComplete();
+          }, 800);
           return 100;
         }
         const increment = prev < 30 ? 3 : prev < 60 ? 4 : prev < 85 ? 5 : 2.5;
@@ -29,7 +34,7 @@ const AppLoader = () => {
     }, 80);
 
     return () => clearInterval(progressTimer);
-  }, []);
+  }, [onComplete]);
 
   const currentMessage = () => {
     if (progress < 20) return messages[0];
@@ -71,13 +76,18 @@ const AppLoader = () => {
       alignItems: 'center',
       justifyContent: 'center',
       height: '100vh',
-      backgroundColor: '#F0F4FF',
+      backgroundColor: '#050B16',
+      backgroundImage: `
+        radial-gradient(circle at 18% 20%, rgba(59, 130, 246, 0.16) 0%, transparent 30%),
+        radial-gradient(circle at 82% 78%, rgba(99, 102, 241, 0.14) 0%, transparent 28%),
+        linear-gradient(135deg, #050B16 0%, #081326 45%, #0F172A 100%)
+      `,
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      padding: '20px',
+      padding: '24px',
       position: 'relative',
       overflow: 'hidden',
       opacity: fadeOut ? 0 : 1,
-      transition: 'opacity 0.4s ease'
+      transition: 'opacity 0.6s ease'
     }}>
       
       {/* Blue Gradient Background */}
@@ -88,9 +98,9 @@ const AppLoader = () => {
         right: 0,
         bottom: 0,
         background: `
-          radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.08) 0%, transparent 60%),
-          radial-gradient(circle at 80% 70%, rgba(37, 99, 235, 0.06) 0%, transparent 50%),
-          radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.05) 0%, transparent 70%)
+          radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.10) 0%, transparent 52%),
+          radial-gradient(circle at 80% 70%, rgba(37, 99, 235, 0.08) 0%, transparent 48%),
+          radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.06) 0%, transparent 68%)
         `,
         pointerEvents: 'none'
       }} />
@@ -124,14 +134,15 @@ const AppLoader = () => {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        maxWidth: '480px',
-        width: '100%'
+        maxWidth: '560px',
+        width: '100%',
+        padding: '8px 0 72px'
       }}>
         
         {/* Logo Section */}
         <div style={{
           position: 'relative',
-          marginBottom: 20,
+          marginBottom: 12,
           opacity: logoVisible ? 1 : 0,
           transform: logoVisible ? 'scale(1)' : 'scale(0.85)',
           transition: 'opacity 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
@@ -145,7 +156,7 @@ const AppLoader = () => {
             width: 280,
             height: 280,
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(59, 130, 246, 0.10) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(59, 130, 246, 0.18) 0%, transparent 70%)',
             animation: 'glowPulse 2s ease-in-out infinite'
           }} />
 
@@ -159,7 +170,7 @@ const AppLoader = () => {
             height: 230,
             borderRadius: '50%',
             padding: 3,
-            background: 'conic-gradient(from 0deg, #3B82F6, #6366F1, #2563EB, #3B82F6)',
+            background: 'conic-gradient(from 0deg, #3B82F6, #60A5FA, #6366F1, #2563EB, #3B82F6)',
             animation: 'rotateRing 4s linear infinite',
             WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 3px), #fff calc(100% - 3px))',
             mask: 'radial-gradient(farthest-side, transparent calc(100% - 3px), #fff calc(100% - 3px))'
@@ -170,13 +181,13 @@ const AppLoader = () => {
             src="/assets/images/logo.png" 
             alt="WorkPulse"
             style={{
-              width: 300,
-              height: 300,
+              width: 280,
+              height: 280,
               objectFit: 'contain',
               display: 'block',
               position: 'relative',
               zIndex: 2,
-              filter: 'drop-shadow(0 8px 30px rgba(59, 130, 246, 0.15))',
+              filter: 'drop-shadow(0 12px 40px rgba(59, 130, 246, 0.22))',
               animation: 'logoFloat 3s ease-in-out infinite'
             }}
           />
@@ -186,7 +197,7 @@ const AppLoader = () => {
         <h1 style={{
           fontSize: 28,
           fontWeight: 700,
-          background: 'linear-gradient(135deg, #2563EB 0%, #3B82F6 40%, #6366F1 100%)',
+          background: 'linear-gradient(135deg, #BFDBFE 0%, #60A5FA 40%, #818CF8 100%)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           margin: 0,
@@ -201,7 +212,7 @@ const AppLoader = () => {
 
         <p style={{
           fontSize: 13,
-          color: '#64748B',
+          color: 'rgba(226,232,240,0.68)',
           margin: 0,
           marginBottom: 28,
           fontWeight: 400,
@@ -215,7 +226,6 @@ const AppLoader = () => {
         </p>
 
         {/* Progress Label */}
-        
         <div style={{
           width: '100%',
           opacity: logoVisible ? 1 : 0,
@@ -279,14 +289,14 @@ const AppLoader = () => {
               gap: 10
             }}>
               <span style={{
-                color: '#3B82F6',
+                color: '#93C5FD',
                 fontSize: 14,
                 fontWeight: 500
               }}>
                 {message.icon}
               </span>
               <span style={{
-                color: '#475569',
+                color: 'rgba(226,232,240,0.74)',
                 fontSize: 14,
                 fontWeight: 400
               }}>
@@ -296,8 +306,8 @@ const AppLoader = () => {
             <span style={{
               fontSize: 16,
               fontWeight: 700,
-              color: '#3B82F6',
-              background: 'rgba(59, 130, 246, 0.08)',
+              color: '#BFDBFE',
+              background: 'rgba(59, 130, 246, 0.14)',
               padding: '2px 16px',
               borderRadius: 20,
               minWidth: '50px',
@@ -312,7 +322,7 @@ const AppLoader = () => {
         <div style={{
           display: 'flex',
           gap: 10,
-          marginTop: 24,
+          marginTop: 22,
           opacity: logoVisible ? 1 : 0,
           transition: 'opacity 0.5s ease 0.4s'
         }}>
@@ -331,11 +341,10 @@ const AppLoader = () => {
           ))}
         </div>
 
-        {/*Footer quote */}
-        
+        {/* Footer quote */}
         <div style={{
           position: 'absolute',
-          bottom: 30,
+          bottom: 22,
           left: '50%',
           transform: 'translateX(-50%)',
           display: 'flex',
@@ -347,11 +356,11 @@ const AppLoader = () => {
           <span style={{
             width: 30,
             height: 1,
-            background: 'linear-gradient(90deg, transparent, #3B82F6)'
+            background: 'linear-gradient(90deg, transparent, #60A5FA)'
           }} />
           <p style={{
             fontSize: 13,
-            color: '#3B82F6',
+            color: '#93C5FD',
             fontWeight: 500,
             margin: 0,
             letterSpacing: '1px'
@@ -361,7 +370,7 @@ const AppLoader = () => {
           <span style={{
             width: 30,
             height: 1,
-            background: 'linear-gradient(90deg, #3B82F6, transparent)'
+            background: 'linear-gradient(90deg, #60A5FA, transparent)'
           }} />
         </div>
       </div>
