@@ -47,10 +47,8 @@ import {
 } from '@mui/icons-material';
 import api from '../../api/axiosConfig';
 
-// ============================================
-// STYLED COMPONENTS
-// ============================================
 
+// STYLED COMPONENTS
 const FormField = styled(TextField)(({ hasError, isValid }) => ({
   '& .MuiOutlinedInput-root': {
     borderRadius: '12px',
@@ -125,10 +123,8 @@ const ValidationBadge = styled(Box)(({ valid }) => ({
   color: valid ? '#10B981' : '#EF4444',
 }));
 
-// ============================================
-// FIXED VALIDATION SCHEMA
-// ============================================
 
+//VALIDATION SCHEMA
 const validationSchema = Yup.object({
   project_name: Yup.string()
     .required('Project name is required')
@@ -192,10 +188,7 @@ const validationSchema = Yup.object({
     .of(Yup.string().min(1, 'Tag cannot be empty').max(30, 'Tag too long').trim()),
 });
 
-// ============================================
 // COMPONENT
-// ============================================
-
 const ProjectForm = ({ mode = 'create' }) => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -209,10 +202,8 @@ const ProjectForm = ({ mode = 'create' }) => {
   const [tagError, setTagError] = useState('');
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
 
-  // ============================================
+ 
   // FETCH DATA
-  // ============================================
-
   const fetchUsers = async () => {
     try {
       const response = await api.get('/auth/users');
@@ -273,10 +264,8 @@ const ProjectForm = ({ mode = 'create' }) => {
     }
   }, []);
 
-  // ============================================
-  // FORM SETUP
-  // ============================================
 
+  // FORM SETUP
   const formik = useFormik({
     initialValues: {
       project_name: '',
@@ -317,10 +306,7 @@ const ProjectForm = ({ mode = 'create' }) => {
     },
   });
 
-  // ============================================
   // TAG MANAGEMENT
-  // ============================================
-
   const addTag = () => {
     const trimmed = newTag.trim();
     if (!trimmed) {
@@ -360,10 +346,7 @@ const ProjectForm = ({ mode = 'create' }) => {
     }
   };
 
-  // ============================================
   // CLOSE HANDLER
-  // ============================================
-
   const handleClose = () => {
     const hasValues = Object.values(formik.values).some(value => {
       if (Array.isArray(value)) return value.length > 0;
@@ -382,10 +365,8 @@ const ProjectForm = ({ mode = 'create' }) => {
     navigate('/projects');
   };
 
-  // ============================================
-  // HELPERS
-  // ============================================
 
+  // HELPERS
   const getFieldStatus = (fieldName) => {
     const touched = formik.touched[fieldName];
     const error = formik.errors[fieldName];
