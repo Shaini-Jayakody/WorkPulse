@@ -32,7 +32,6 @@ import {
   Description,
 } from '@mui/icons-material';
 
-
 // STYLED COMPONENTS
 const SidebarHeader = styled(Box)({
   display: 'flex',
@@ -155,7 +154,6 @@ const LoadingWrapper = styled(Box)({
   width: '100%',
 });
 
-
 // COMPONENT
 const Sidebar = ({ 
   open, 
@@ -201,6 +199,12 @@ const Sidebar = ({
       path: '/analytics',
       roles: ['manager', 'admin'],
     },
+     { 
+      label: 'Profile', 
+      icon: <Person />, 
+      path: '/profile',
+      roles: ['team_member', 'manager', 'admin', 'super_admin'],
+    },
   ];
 
   const managementNavItems = [
@@ -208,7 +212,7 @@ const Sidebar = ({
       label: 'Projects', 
       icon: <Work />,
       path: '/projects',
-      roles: ['manager', 'admin'],
+      roles: ['manager', 'admin', 'super_admin'], 
     },
     { 
       label: 'Categories', 
@@ -222,13 +226,7 @@ const Sidebar = ({
       path: '/team',
       roles: ['manager', 'admin'],
     },
-    { 
-      label: 'Profile', 
-      icon: <Person />, 
-      path: '/profile',
-      roles: ['team_member', 'manager', 'admin', 'super_admin'],
-    },
-  
+   
   ];
 
   // Super Admin specific nav items
@@ -275,7 +273,7 @@ const Sidebar = ({
   );
   
   const managementNav = visibleNavItems.filter(item => 
-    ['Projects', 'Categories', 'Team Management', 'Profile'].includes(item.label)  // ❌ Settings removed
+    ['Projects', 'Categories', 'Team Management', 'Profile'].includes(item.label)
   );
 
   // Get user data

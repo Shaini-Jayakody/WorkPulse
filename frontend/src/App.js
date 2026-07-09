@@ -14,6 +14,10 @@ import Profile from './pages/Profile';
 import AdminReports from './pages/AdminReports';
 import MyReports from './pages/MyReports';
 import ReportView from './components/reports/ReportView';
+import Projects from './pages/Projects';
+import ProjectView from './components/projects/ProjectView';
+import ProjectForm from './components/projects/ProjectForm';
+
 import api from './api/axiosConfig';
 
 function App() {
@@ -178,6 +182,10 @@ function App() {
                 )
               }
             />
+            <Route path="/projects" element={<Projects />} />
+<Route path="/projects/create" element={<ProjectForm mode="create" />} />
+<Route path="/projects/edit/:id" element={<ProjectForm mode="edit" />} />
+<Route path="/projects/view/:id" element={<ProjectView />} />
 
             {/* Report View - Team Member */}
             <Route
