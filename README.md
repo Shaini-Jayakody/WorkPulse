@@ -72,3 +72,8 @@ REACT_APP_API_URL=http://localhost:5000/api
 ## License
 MIT License
 
+## Documents
+ER diagram: https://drive.google.com/file/d/1Ckq0xWSmpXJ4A5CwUIGFRWXdQSYQhRV3/view?usp=drive_link
+Presentation: https://docs.google.com/presentation/d/1b6AIzkIF0hFLJTkUUOdj9nEOPCbqCTBz7LZv6ZD5pnY/edit?usp=sharing
+Demo: https://drive.google.com/file/d/1pcpMUHX7C6kmdSA-Dv-sfg7y1l57m82N/view?usp=sharing
+
