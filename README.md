@@ -1,4 +1,4 @@
-# WorkPulse – Weekly Report Generator
+# WorkPulse 
 
 ## Overview
 WorkPulse is a full-stack web application that allows team members to submit weekly reports while managers monitor team performance through an interactive dashboard.
