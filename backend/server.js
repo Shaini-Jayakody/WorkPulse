@@ -54,6 +54,7 @@ const dashboardRoutes = require('./src/routes/dashboardRoutes');
 const projectRoutes = require('./src/routes/projectRoutes'); 
 const categoryRoutes = require('./src/routes/categoryRoutes'); 
 const analyticsRoutes = require('./src/routes/dashboardAnalyticsRoutes');
+const aiChatRoutes = require('./src/routes/aiChatRoute');
 
 // Basic route for testing
 app.get('/', (req, res) => {
@@ -89,6 +90,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/categories', categoryRoutes); 
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/ai', aiChatRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

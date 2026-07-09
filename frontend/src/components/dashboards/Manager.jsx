@@ -81,6 +81,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import api from '../../api/axiosConfig';
 import { format } from 'date-fns';
+import AIChatWidget from '../../components/common/AIChat/AIChatWidget';
 
 
 // STYLED COMPONENTS
@@ -1397,6 +1398,11 @@ const ManagerDashboard = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      {/* AI Chat Widget */}
+<AIChatWidget 
+  weekNumber={selectedWeekInMonth} 
+  year={selectedYear} 
+/>
     </Container>
   );
 };
