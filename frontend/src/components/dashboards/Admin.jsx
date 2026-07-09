@@ -24,6 +24,16 @@ import {
   ListItemAvatar,
   ListItemText,
   LinearProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  TextField,
+  Stack,
+  Divider,
+  Tooltip,
+  Badge,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import {
@@ -41,6 +51,16 @@ import {
   Block,
   Description,
   Person,
+  People,
+  HowToReg,
+  PersonAdd,
+  ThumbUp,
+  ThumbDown,
+  Comment,
+  Assignment,
+  Email,
+  Phone,
+  Work,
 } from '@mui/icons-material';
 import {
   BarChart as RechartsBarChart,
@@ -123,6 +143,10 @@ const StatusChip = styled(Chip)(({ status }) => {
     pending: '#F59E0B',
     late: '#EF4444',
     draft: '#94A3B8',
+    pending_manager_approval: '#F59E0B',
+    pending_admin_approval: '#8B5CF6',
+    approved: '#10B981',
+    rejected: '#EF4444',
   };
   const color = colors[status] || '#64748B';
   return {
@@ -135,6 +159,17 @@ const StatusChip = styled(Chip)(({ status }) => {
   };
 });
 
+const ApprovalCard = styled(Paper)({
+  padding: '16px 20px',
+  borderRadius: '12px',
+  border: '1px solid rgba(245, 158, 11, 0.3)',
+  background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.03), rgba(245, 158, 11, 0.06))',
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    borderColor: 'rgba(245, 158, 11, 0.5)',
+    boxShadow: '0 4px 16px rgba(245, 158, 11, 0.08)',
+  },
+});
 
 // CHART COLORS
 const COLORS = ['#3B82F6', '#8B5CF6', '#EC4899', '#10B981', '#F59E0B', '#EF4444', '#06B6D4', '#6366F1'];
@@ -150,11 +185,22 @@ const ManagerDashboard = () => {
     recentActivity: [],
     blockers: { total: 0, list: [] },
   });
+  const [pendingApprovals, setPendingApprovals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingApprovals, setLoadingApprovals] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [exporting, setExporting] = useState(false);
   const dashboardRef = useRef(null);
+
+  // Approval dialog states
+  const [approvalDialog, setApprovalDialog] = useState({
+    open: false,
+    user: null,
+    action: null, // 'approve' or 'reject'
+  });
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [submittingApproval, setSubmittingApproval] = useState(false);
 
   // Time range states
   const [viewType, setViewType] = useState('week');
@@ -231,7 +277,23 @@ const ManagerDashboard = () => {
   }, [selectedMonth, selectedYear]);
 
 
-  // FETCH DATA FROM BACKEND
+  // FETCH PENDING APPROVALS
+  const fetchPendingApprovals = async () => {
+    setLoadingApprovals(true);
+    try {
+      const response = await api.get('/auth/approvals/pending');
+      if (response.data.success) {
+        setPendingApprovals(response.data.data.users || []);
+      }
+    } catch (err) {
+      console.error('Error fetching pending approvals:', err);
+      // Don't show error for approvals, just log it
+    } finally {
+      setLoadingApprovals(false);
+    }
+  };
+
+  // FETCH DASHBOARD DATA
   const loadDashboardData = async () => {
     setLoading(true);
     setError('');
@@ -304,6 +366,9 @@ const ManagerDashboard = () => {
         },
       });
 
+      // Fetch pending approvals
+      await fetchPendingApprovals();
+
       const displayText = viewType === 'week' 
         ? `Week ${selectedWeekInMonth} of ${months[selectedMonth]} ${selectedYear}`
         : `${months[selectedMonth]} ${selectedYear}`;
@@ -320,6 +385,66 @@ const ManagerDashboard = () => {
   useEffect(() => {
     loadDashboardData();
   }, [viewType, selectedMonth, selectedYear, selectedWeekInMonth]);
+
+
+  // APPROVAL HANDLERS
+  const handleApproveUser = async () => {
+    if (!approvalDialog.user) return;
+    
+    setSubmittingApproval(true);
+    try {
+      const response = await api.post(`/auth/users/${approvalDialog.user._id}/approve`);
+      if (response.data.success) {
+        setSuccess(`${approvalDialog.user.first_name} ${approvalDialog.user.last_name} has been approved successfully!`);
+        // Refresh pending approvals
+        await fetchPendingApprovals();
+        setApprovalDialog({ open: false, user: null, action: null });
+      }
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to approve user.');
+    } finally {
+      setSubmittingApproval(false);
+    }
+  };
+
+  const handleRejectUser = async () => {
+    if (!approvalDialog.user) return;
+    
+    if (!rejectionReason.trim()) {
+      setError('Please provide a reason for rejection.');
+      return;
+    }
+    
+    setSubmittingApproval(true);
+    try {
+      const response = await api.post(`/auth/users/${approvalDialog.user._id}/reject`, {
+        reason: rejectionReason,
+      });
+      if (response.data.success) {
+        setSuccess(`${approvalDialog.user.first_name} ${approvalDialog.user.last_name} has been rejected.`);
+        // Refresh pending approvals
+        await fetchPendingApprovals();
+        setApprovalDialog({ open: false, user: null, action: null });
+        setRejectionReason('');
+      }
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to reject user.');
+    } finally {
+      setSubmittingApproval(false);
+    }
+  };
+
+  const openApprovalDialog = (user, action) => {
+    setApprovalDialog({ open: true, user, action });
+    setRejectionReason('');
+    setError('');
+  };
+
+  const closeApprovalDialog = () => {
+    setApprovalDialog({ open: false, user: null, action: null });
+    setRejectionReason('');
+    setError('');
+  };
 
 
   // PDF EXPORT
@@ -422,6 +547,10 @@ const ManagerDashboard = () => {
       pending: 'Pending',
       late: 'Late',
       draft: 'Draft',
+      pending_manager_approval: 'Pending Manager',
+      pending_admin_approval: 'Pending Admin',
+      approved: 'Approved',
+      rejected: 'Rejected',
     };
     return labels[status] || status;
   };
@@ -436,16 +565,6 @@ const ManagerDashboard = () => {
     });
   };
 
-  
-  // RENDER
-  if (loading) {
-    return (
-      <Container maxWidth="xl" sx={{ py: 8, display: 'flex', justifyContent: 'center' }}>
-        <CircularProgress sx={{ color: '#3B82F6' }} />
-      </Container>
-    );
-  }
-
   const getWeekDisplay = () => {
     const weeksInMonth = getWeeksInMonth(selectedMonth, selectedYear);
     const weekIndex = Math.min(selectedWeekInMonth - 1, weeksInMonth.length - 1);
@@ -457,6 +576,16 @@ const ManagerDashboard = () => {
     }
     return '';
   };
+
+  
+  // RENDER
+  if (loading) {
+    return (
+      <Container maxWidth="xl" sx={{ py: 8, display: 'flex', justifyContent: 'center' }}>
+        <CircularProgress sx={{ color: '#3B82F6' }} />
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="xl" sx={{ py: 4, backgroundColor: '#F8FAFC', minHeight: '100vh' }}>
@@ -564,7 +693,127 @@ const ManagerDashboard = () => {
         {success && <Alert severity="success" sx={{ mb: 3, borderRadius: '12px' }} onClose={() => setSuccess('')}>{success}</Alert>}
         {error && <Alert severity="error" sx={{ mb: 3, borderRadius: '12px' }} onClose={() => setError('')}>{error}</Alert>}
 
-        {/* Summary Metrics Cards - ALL FROM API */}
+        {/* Pending Approvals Section */}
+        {pendingApprovals.length > 0 && (
+          <Box sx={{ mb: 4 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+              <Badge badgeContent={pendingApprovals.length} color="warning">
+                <People sx={{ color: '#F59E0B', fontSize: 28 }} />
+              </Badge>
+              <Typography variant="h6" fontWeight={600} color="#1E293B">
+                Pending Approvals
+              </Typography>
+              <Chip 
+                label={`${pendingApprovals.length} member${pendingApprovals.length > 1 ? 's' : ''} waiting`}
+                size="small"
+                sx={{ 
+                  backgroundColor: 'rgba(245, 158, 11, 0.08)', 
+                  color: '#F59E0B',
+                  fontWeight: 600,
+                }}
+              />
+            </Box>
+
+            <Grid container spacing={2}>
+              {pendingApprovals.map((user) => (
+                <Grid item xs={12} md={6} lg={4} key={user._id}>
+                  <ApprovalCard>
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                      <Avatar
+                        sx={{
+                          width: 48,
+                          height: 48,
+                          bgcolor: 'rgba(245, 158, 11, 0.08)',
+                          color: '#F59E0B',
+                          fontSize: '18px',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {user.first_name?.charAt(0)}{user.last_name?.charAt(0)}
+                      </Avatar>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                          <Typography variant="subtitle1" fontWeight={600} color="#1E293B">
+                            {user.first_name} {user.last_name}
+                          </Typography>
+                          <StatusChip 
+                            label={getStatusLabel(user.approval_status)}
+                            status={user.approval_status}
+                            size="small"
+                          />
+                        </Box>
+                        <Typography variant="body2" color="#64748B" sx={{ mt: 0.5 }}>
+                          <Email sx={{ fontSize: 14, mr: 0.5, verticalAlign: 'middle' }} />
+                          {user.email}
+                        </Typography>
+                        <Stack direction="row" spacing={2} sx={{ mt: 0.5 }}>
+                          <Typography variant="caption" color="#94A3B8">
+                            <Work sx={{ fontSize: 12, mr: 0.3, verticalAlign: 'middle' }} />
+                            {user.role?.replace('_', ' ').toUpperCase() || 'Team Member'}
+                          </Typography>
+                          {user.team_no && (
+                            <Typography variant="caption" color="#94A3B8">
+                              Team: {user.team_no}
+                            </Typography>
+                          )}
+                          {user.contact_no && (
+                            <Typography variant="caption" color="#94A3B8">
+                              <Phone sx={{ fontSize: 12, mr: 0.3, verticalAlign: 'middle' }} />
+                              {user.contact_no}
+                            </Typography>
+                          )}
+                        </Stack>
+                        <Box sx={{ display: 'flex', gap: 1, mt: 1.5 }}>
+                          <Tooltip title="Approve this member">
+                            <Button
+                              variant="contained"
+                              size="small"
+                              startIcon={<ThumbUp />}
+                              onClick={() => openApprovalDialog(user, 'approve')}
+                              sx={{
+                                borderRadius: '8px',
+                                textTransform: 'none',
+                                background: 'linear-gradient(135deg, #10B981, #059669)',
+                                '&:hover': {
+                                  background: 'linear-gradient(135deg, #059669, #047857)',
+                                },
+                              }}
+                            >
+                              Approve
+                            </Button>
+                          </Tooltip>
+                          <Tooltip title="Reject this member">
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              color="error"
+                              startIcon={<ThumbDown />}
+                              onClick={() => openApprovalDialog(user, 'reject')}
+                              sx={{
+                                borderRadius: '8px',
+                                textTransform: 'none',
+                                borderColor: '#EF4444',
+                                color: '#EF4444',
+                                '&:hover': {
+                                  borderColor: '#DC2626',
+                                  bgcolor: 'rgba(239, 68, 68, 0.04)',
+                                },
+                              }}
+                            >
+                              Reject
+                            </Button>
+                          </Tooltip>
+                        </Box>
+                      </Box>
+                    </Box>
+                  </ApprovalCard>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+        )}
+
+        {/* Summary Metrics Cards */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid item xs={6} sm={3}>
             <StatsCard>
@@ -969,6 +1218,136 @@ const ManagerDashboard = () => {
           </Grid>
         </Grid>
       </Box>
+
+      {/* Approval Dialog */}
+      <Dialog
+        open={approvalDialog.open}
+        onClose={closeApprovalDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '20px',
+            padding: '8px',
+          },
+        }}
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {approvalDialog.action === 'approve' ? (
+              <Avatar sx={{ bgcolor: 'rgba(16, 185, 129, 0.08)', color: '#10B981' }}>
+                <ThumbUp />
+              </Avatar>
+            ) : (
+              <Avatar sx={{ bgcolor: 'rgba(239, 68, 68, 0.08)', color: '#EF4444' }}>
+                <ThumbDown />
+              </Avatar>
+            )}
+            <Box>
+              <Typography variant="h6" fontWeight={700} color="#1E293B">
+                {approvalDialog.action === 'approve' ? 'Approve' : 'Reject'} Member
+              </Typography>
+              <Typography variant="body2" color="#94A3B8">
+                {approvalDialog.user?.first_name} {approvalDialog.user?.last_name}
+              </Typography>
+            </Box>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText color="#64748B" sx={{ mb: 2 }}>
+            {approvalDialog.action === 'approve' 
+              ? 'Are you sure you want to approve this member? They will gain access to the system immediately.'
+              : 'Please provide a reason for rejecting this member. This will be sent to the member via email.'}
+          </DialogContentText>
+          
+          {approvalDialog.user && (
+            <Paper sx={{ p: 2, borderRadius: '12px', bgcolor: '#F8FAFC', mb: 2 }}>
+              <Grid container spacing={1}>
+                <Grid item xs={6}>
+                  <Typography variant="caption" color="#94A3B8">Name</Typography>
+                  <Typography variant="body2" fontWeight={500} color="#1E293B">
+                    {approvalDialog.user.first_name} {approvalDialog.user.last_name}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="caption" color="#94A3B8">Role</Typography>
+                  <Typography variant="body2" fontWeight={500} color="#1E293B">
+                    {approvalDialog.user.role?.replace('_', ' ').toUpperCase()}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="caption" color="#94A3B8">Email</Typography>
+                  <Typography variant="body2" fontWeight={500} color="#1E293B" noWrap>
+                    {approvalDialog.user.email}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="caption" color="#94A3B8">Team</Typography>
+                  <Typography variant="body2" fontWeight={500} color="#1E293B">
+                    {approvalDialog.user.team_no || 'N/A'}
+                  </Typography>
+                </Grid>
+              </Grid>
+            </Paper>
+          )}
+
+          {approvalDialog.action === 'reject' && (
+            <TextField
+              fullWidth
+              label="Rejection Reason"
+              placeholder="Please explain why this member is being rejected..."
+              multiline
+              rows={3}
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              sx={{
+                mt: 1,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '12px',
+                },
+              }}
+            />
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, gap: 1 }}>
+          <Button
+            onClick={closeApprovalDialog}
+            variant="outlined"
+            sx={{
+              borderRadius: '10px',
+              textTransform: 'none',
+              borderColor: '#E2E8F0',
+              color: '#64748B',
+              '&:hover': { borderColor: '#CBD5E1' },
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={approvalDialog.action === 'approve' ? handleApproveUser : handleRejectUser}
+            variant="contained"
+            disabled={submittingApproval || (approvalDialog.action === 'reject' && !rejectionReason.trim())}
+            startIcon={submittingApproval ? <CircularProgress size={20} color="inherit" /> : null}
+            sx={{
+              borderRadius: '10px',
+              textTransform: 'none',
+              background: approvalDialog.action === 'approve' 
+                ? 'linear-gradient(135deg, #10B981, #059669)'
+                : 'linear-gradient(135deg, #EF4444, #DC2626)',
+              '&:hover': {
+                background: approvalDialog.action === 'approve'
+                  ? 'linear-gradient(135deg, #059669, #047857)'
+                  : 'linear-gradient(135deg, #DC2626, #B91C1C)',
+              },
+              '&:disabled': {
+                background: '#CBD5E1',
+              },
+            }}
+          >
+            {submittingApproval ? 'Processing...' : approvalDialog.action === 'approve' ? 'Approve' : 'Reject'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
