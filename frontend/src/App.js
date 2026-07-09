@@ -36,6 +36,7 @@ import TeamManagement from './pages/TeamManagement';
 
 // Component Views
 import ReportView from './components/reports/ReportView';
+import ReportUpdateForm from './components/reports/ReportUpdateForm';
 import ProjectView from './components/projects/ProjectView';
 import ProjectForm from './components/projects/ProjectForm';
 import CategoryForm from './components/category/CategoryForm';
@@ -43,6 +44,8 @@ import CategoryView from './components/category/CategoryView';
 
 // API
 import api from './api/axiosConfig';
+import Projects from './pages/Projects';
+import Categories from './pages/Category';
 
 
 // APP COMPONENT
@@ -299,6 +302,18 @@ function App() {
               }
             />
 
+            {/* Report Update Form - All Authenticated Users (Draft only) */}
+            <Route
+              path="/reports/edit/:id"
+              element={
+                isAuthenticated ? (
+                  <ReportUpdateForm />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+
             {/* Admin Reports - Admin & Super Admin Only */}
             <Route
               path="/admin-reports"
@@ -325,7 +340,7 @@ function App() {
 
            
             {/* PROJECT ROUTES - All Authenticated Users */}
-            <Route path="/projects" element={<ProjectList />} />
+            <Route path="/projects" element={<Projects />} />
             <Route path="/projects/list" element={<ProjectList />} />
             <Route path="/projects/create" element={<ProjectForm mode="create" />} />
             <Route path="/projects/edit/:id" element={<ProjectForm mode="edit" />} />
@@ -333,7 +348,7 @@ function App() {
 
           
             {/* CATEGORY ROUTES - All Authenticated Users */}
-            <Route path="/categories" element={<CategoryList />} />
+            <Route path="/categories" element={<Categories />} />
             <Route path="/categories/list" element={<CategoryList />} />
             <Route path="/categories/create" element={<CategoryForm mode="create" />} />
             <Route path="/categories/edit/:id" element={<CategoryForm mode="edit" />} />

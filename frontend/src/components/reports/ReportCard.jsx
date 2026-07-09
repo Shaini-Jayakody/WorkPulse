@@ -23,6 +23,7 @@ import {
   Work,
   CalendarToday,
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 
 const StyledCard = styled(Card)(({ compact }) => ({
   borderRadius: '16px',
@@ -55,6 +56,8 @@ const StatusChip = styled(Chip)(({ status }) => ({
 }));
 
 const ReportCard = ({ report, onEdit, onView, onDelete, onSubmit, compact = false }) => {
+  const navigate = useNavigate();
+
   const getStatusLabel = (status) => {
     const labels = {
       submitted: 'Submitted',
@@ -67,6 +70,16 @@ const ReportCard = ({ report, onEdit, onView, onDelete, onSubmit, compact = fals
 
   const canEdit = report.status === 'draft' || report.status === 'pending';
   const canSubmit = report.status === 'draft' || report.status === 'pending';
+
+  // Handle Edit - Navigate to edit page
+  const handleEdit = () => {
+    navigate(`/reports/edit/${report._id}`);
+  };
+
+  // Handle View - Navigate to view page
+  const handleView = () => {
+    navigate(`/reports/view/${report._id}`);
+  };
 
   return (
     <StyledCard compact={compact}>
@@ -151,20 +164,32 @@ const ReportCard = ({ report, onEdit, onView, onDelete, onSubmit, compact = fals
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 0.5 }}>
           <Box sx={{ display: 'flex', gap: 0.5 }}>
             <Tooltip title="View">
-              <IconButton size="small" onClick={() => onView(report._id)} sx={{ color: '#64748B' }}>
+              <IconButton 
+                size="small" 
+                onClick={handleView} 
+                sx={{ color: '#64748B' }}
+              >
                 <Visibility fontSize="small" />
               </IconButton>
             </Tooltip>
             {canEdit && (
               <Tooltip title="Edit">
-                <IconButton size="small" onClick={() => onEdit(report)} sx={{ color: '#3B82F6' }}>
+                <IconButton 
+                  size="small" 
+                  onClick={handleEdit} 
+                  sx={{ color: '#3B82F6' }}
+                >
                   <Edit fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}
             {canEdit && (
               <Tooltip title="Delete">
-                <IconButton size="small" onClick={() => onDelete(report._id)} sx={{ color: '#EF4444' }}>
+                <IconButton 
+                  size="small" 
+                  onClick={() => onDelete(report._id)} 
+                  sx={{ color: '#EF4444' }}
+                >
                   <Delete fontSize="small" />
                 </IconButton>
               </Tooltip>

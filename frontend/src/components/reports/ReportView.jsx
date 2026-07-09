@@ -421,6 +421,7 @@ const ReportView = () => {
 
   const canEdit = report?.status === 'draft' || report?.status === 'pending';
   const canSubmit = report?.status === 'draft' || report?.status === 'pending';
+  const canDelete = report?.status === 'draft' || report?.status === 'pending';
 
 
   // RENDER
@@ -519,6 +520,7 @@ const ReportView = () => {
           </Box>
         </Box>
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          {/* Edit Button - Navigates to edit page */}
           {canEdit && (
             <Button
               variant="outlined"
@@ -535,6 +537,7 @@ const ReportView = () => {
               Edit
             </Button>
           )}
+          {/* Submit Button */}
           {canSubmit && (
             <Button
               variant="contained"
@@ -553,6 +556,24 @@ const ReportView = () => {
               {submitting ? 'Submitting...' : 'Submit'}
             </Button>
           )}
+          {/* Delete Button */}
+          {canDelete && (
+            <Button
+              variant="outlined"
+              startIcon={<Delete />}
+              onClick={handleDelete}
+              sx={{
+                borderRadius: '10px',
+                textTransform: 'none',
+                borderColor: '#EF4444',
+                color: '#EF4444',
+                '&:hover': { bgcolor: 'rgba(239,68,68,0.04)' },
+              }}
+            >
+              Delete
+            </Button>
+          )}
+          {/* Download PDF Button */}
           <Tooltip title="Download PDF">
             <Button
               variant="contained"
@@ -843,6 +864,9 @@ const ReportView = () => {
                         justifyContent: 'flex-start',
                         borderColor: '#3B82F6',
                         color: '#3B82F6',
+                        '&:hover': {
+                          bgcolor: 'rgba(59,130,246,0.04)',
+                        },
                       }}
                     >
                       Edit Report
@@ -860,9 +884,32 @@ const ReportView = () => {
                         textTransform: 'none',
                         justifyContent: 'flex-start',
                         background: 'linear-gradient(135deg, #10B981, #059669)',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #059669, #047857)',
+                        },
                       }}
                     >
                       {submitting ? 'Submitting...' : 'Submit Report'}
+                    </Button>
+                  )}
+                  {canDelete && (
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      startIcon={<Delete />}
+                      onClick={handleDelete}
+                      sx={{
+                        borderRadius: '10px',
+                        textTransform: 'none',
+                        justifyContent: 'flex-start',
+                        borderColor: '#EF4444',
+                        color: '#EF4444',
+                        '&:hover': {
+                          bgcolor: 'rgba(239,68,68,0.04)',
+                        },
+                      }}
+                    >
+                      Delete Report
                     </Button>
                   )}
                   <Button
@@ -894,6 +941,9 @@ const ReportView = () => {
                       justifyContent: 'flex-start',
                       borderColor: '#E2E8F0',
                       color: '#64748B',
+                      '&:hover': {
+                        bgcolor: '#F8FAFC',
+                      },
                     }}
                   >
                     Back to Reports
