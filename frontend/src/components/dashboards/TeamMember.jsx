@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -14,6 +14,8 @@ import {
   Divider,
   IconButton,
   Tooltip,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import {
   EventNote,
@@ -31,6 +33,8 @@ import {
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { Link } from 'react-router-dom';
+import api from '../../api/axiosConfig';
+import { format } from 'date-fns';
 
 // ============================================
 // STYLED COMPONENTS
@@ -96,10 +100,12 @@ const StatusChip = styled(Chip)(({ status }) => ({
   backgroundColor: 
     status === 'submitted' ? 'rgba(16, 185, 129, 0.1)' :
     status === 'pending' ? 'rgba(245, 158, 11, 0.1)' :
+    status === 'draft' ? 'rgba(148, 163, 184, 0.1)' :
     'rgba(239, 68, 68, 0.1)',
   color: 
     status === 'submitted' ? '#10B981' :
     status === 'pending' ? '#F59E0B' :
+    status === 'draft' ? '#94A3B8' :
     '#EF4444',
 }));
 
@@ -108,78 +114,212 @@ const StatusChip = styled(Chip)(({ status }) => ({
 // ============================================
 
 const TeamMemberDashboard = () => {
-  const [stats] = useState({
-    totalReports: 24,
-    submittedReports: 18,
-    pendingReports: 4,
-    draftReports: 2,
-    completionRate: 75,
-    totalHours: 280,
-    averageHours: 35,
-    streak: 12,
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [stats, setStats] = useState({
+    totalReports: 0,
+    submittedReports: 0,
+    pendingReports: 0,
+    draftReports: 0,
+    completionRate: 0,
+    totalHours: 0,
+    averageHours: 0,
+    streak: 0,
+    totalTasks: 0,
   });
+  const [recentReports, setRecentReports] = useState([]);
+  const [user, setUser] = useState(null);
 
-  const [recentReports] = useState([
-    {
-      id: 1,
-      week: 'Week 27, 2026',
-      project: 'WorkPulse Application',
-      status: 'submitted',
-      date: '2026-07-07',
-      tasks: 5,
-      hours: 35,
-    },
-    {
-      id: 2,
-      week: 'Week 26, 2026',
-      project: 'WorkPulse Frontend',
-      status: 'pending',
-      date: '2026-06-30',
-      tasks: 3,
-      hours: 28,
-    },
-    {
-      id: 3,
-      week: 'Week 25, 2026',
-      project: 'Database Migration',
-      status: 'submitted',
-      date: '2026-06-23',
-      tasks: 4,
-      hours: 32,
-    },
-    {
-      id: 4,
-      week: 'Week 24, 2026',
-      project: 'AI Integration',
-      status: 'draft',
-      date: '2026-06-16',
-      tasks: 2,
-      hours: 20,
-    },
-  ]);
+  // Fetch dashboard data
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      // Get current week number
+      const now = new Date();
+      const weekNumber = getWeekNumber(now);
+      const year = now.getFullYear();
+
+      // Fetch user profile
+      const profileRes = await api.get('/auth/profile');
+      const userData = profileRes.data.data.user;
+      setUser(userData);
+
+      // Fetch reports for the user
+      const reportsRes = await api.get(`/reports/week/${weekNumber}/${year}`);
+      const reports = reportsRes.data.data?.report || [];
+      const allReports = reports ? [reports] : [];
+
+      // Fetch all user reports for stats
+      const allReportsRes = await api.get('/reports');
+      const allUserReports = allReportsRes.data.data?.reports || [];
+
+      // Calculate stats
+      const total = allUserReports.length;
+      const submitted = allUserReports.filter(r => r.status === 'submitted').length;
+      const pending = allUserReports.filter(r => r.status === 'pending' || r.status === 'draft').length;
+      const draft = allUserReports.filter(r => r.status === 'draft').length;
+      const totalHours = allUserReports.reduce((sum, r) => sum + (r.worked_hours || 0), 0);
+      const totalTasks = allUserReports.reduce((sum, r) => sum + (r.tasks_completed ? r.tasks_completed.length : 0), 0);
+      
+      // Calculate completion rate
+      const completionRate = total > 0 ? Math.round((submitted / total) * 100) : 0;
+      
+      // Calculate average hours
+      const avgHours = total > 0 ? Math.round(totalHours / total) : 0;
+
+      // Calculate streak (consecutive weeks with submitted reports)
+      const streak = calculateStreak(allUserReports);
+
+      setStats({
+        totalReports: total,
+        submittedReports: submitted,
+        pendingReports: pending,
+        draftReports: draft,
+        completionRate,
+        totalHours,
+        averageHours: avgHours,
+        streak,
+        totalTasks,
+      });
+
+      // Get recent reports (last 4)
+      const sortedReports = allUserReports
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 4);
+      setRecentReports(sortedReports);
+
+      setSuccess('Dashboard updated successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+
+    } catch (err) {
+      console.error('Dashboard load error:', err);
+      setError(err?.response?.data?.message || 'Failed to load dashboard data.');
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  // Helper: Get week number
+  const getWeekNumber = (date) => {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  };
+
+  // Helper: Calculate streak
+  const calculateStreak = (reports) => {
+    if (!reports || reports.length === 0) return 0;
+    
+    const submittedReports = reports
+      .filter(r => r.status === 'submitted')
+      .sort((a, b) => new Date(b.submitted_at || b.createdAt) - new Date(a.submitted_at || a.createdAt));
+    
+    if (submittedReports.length === 0) return 0;
+    
+    let streak = 0;
+    let currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0);
+    
+    // Get the current week number
+    const currentWeek = getWeekNumber(currentDate);
+    const currentYear = currentDate.getFullYear();
+    
+    // Check if there's a submission for the current week
+    const hasCurrentWeek = submittedReports.some(r => 
+      r.week_number === currentWeek && r.year === currentYear
+    );
+    
+    if (!hasCurrentWeek) {
+      // If no submission this week, check if we're early in the week (Monday-Wednesday)
+      const dayOfWeek = currentDate.getDay();
+      if (dayOfWeek >= 1 && dayOfWeek <= 3) {
+        // Still early in the week, don't break streak
+        streak = 1;
+      } else {
+        return 0;
+      }
+    }
+    
+    // Calculate consecutive weeks
+    let checkWeek = currentWeek;
+    let checkYear = currentYear;
+    let found = hasCurrentWeek;
+    
+    while (found) {
+      streak++;
+      checkWeek--;
+      if (checkWeek < 1) {
+        checkWeek = 52;
+        checkYear--;
+      }
+      found = submittedReports.some(r => 
+        r.week_number === checkWeek && r.year === checkYear
+      );
+    }
+    
+    return streak;
+  };
 
   const getStatusLabel = (status) => {
     return status === 'submitted' ? 'Submitted' :
            status === 'pending' ? 'Pending' :
-           'Draft';
+           status === 'draft' ? 'Draft' :
+           'Unknown';
   };
+
+  const formatDate = (date) => {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  if (loading) {
+    return (
+      <Container maxWidth="xl" sx={{ py: 8, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <Box sx={{ textAlign: 'center' }}>
+          <CircularProgress sx={{ color: '#3B82F6' }} />
+          <Typography variant="body2" color="#94A3B8" sx={{ mt: 2 }}>
+            Loading your dashboard...
+          </Typography>
+        </Box>
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
+      {/* Messages */}
+      {success && <Alert severity="success" sx={{ mb: 3, borderRadius: '12px' }} onClose={() => setSuccess('')}>{success}</Alert>}
+      {error && <Alert severity="error" sx={{ mb: 3, borderRadius: '12px' }} onClose={() => setError('')}>{error}</Alert>}
+
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
         <Box>
           <Typography variant="h4" fontWeight={700} color="#1E293B">
             Dashboard
           </Typography>
           <Typography variant="body2" color="#94A3B8" sx={{ mt: 0.5 }}>
-            Welcome back! Here's your weekly report summary
+            Welcome back{user ? `, ${user.first_name}` : ''}! Here's your weekly report summary
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
           <Button
             variant="outlined"
             startIcon={<Refresh />}
+            onClick={fetchDashboardData}
             sx={{
               borderRadius: '10px',
               textTransform: 'none',
@@ -280,7 +420,11 @@ const TeamMemberDashboard = () => {
                   Weekly Progress
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Chip label="Week 27, 2026" size="small" sx={{ borderRadius: '6px' }} />
+                  <Chip 
+                    label={`${stats.submittedReports} / ${stats.totalReports} submitted`} 
+                    size="small" 
+                    sx={{ borderRadius: '6px' }} 
+                  />
                 </Box>
               </Box>
               
@@ -326,7 +470,7 @@ const TeamMemberDashboard = () => {
                 <Grid item xs={4}>
                   <Typography variant="caption" color="#94A3B8">Tasks Completed</Typography>
                   <Typography variant="body1" fontWeight={600} color="#1E293B">
-                    42
+                    {stats.totalTasks}
                   </Typography>
                 </Grid>
               </Grid>
@@ -391,74 +535,80 @@ const TeamMemberDashboard = () => {
             </Button>
           </Box>
 
-          <Grid container spacing={2}>
-            {recentReports.map((report) => (
-              <Grid item xs={12} key={report.id}>
-                <Paper
-                  sx={{
-                    p: 2,
-                    borderRadius: '12px',
-                    border: '1px solid rgba(226, 232, 240, 0.6)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      borderColor: '#3B82F6',
-                      bgcolor: '#F8FAFC',
-                    },
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Box
-                      sx={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: '10px',
-                        bgcolor: `rgba(59, 130, 246, 0.08)`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <Schedule sx={{ color: '#3B82F6', fontSize: 20 }} />
-                    </Box>
-                    <Box>
-                      <Typography variant="body1" fontWeight={600} color="#1E293B">
-                        {report.project}
-                      </Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 0.5 }}>
-                        <Typography variant="caption" color="#94A3B8">
-                          {report.week}
+          {recentReports.length === 0 ? (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Typography color="#94A3B8">No reports found. Create your first report!</Typography>
+            </Box>
+          ) : (
+            <Grid container spacing={2}>
+              {recentReports.map((report) => (
+                <Grid item xs={12} key={report._id}>
+                  <Paper
+                    sx={{
+                      p: 2,
+                      borderRadius: '12px',
+                      border: '1px solid rgba(226, 232, 240, 0.6)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        borderColor: '#3B82F6',
+                        bgcolor: '#F8FAFC',
+                      },
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Box
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: '10px',
+                          bgcolor: `rgba(59, 130, 246, 0.08)`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Schedule sx={{ color: '#3B82F6', fontSize: 20 }} />
+                      </Box>
+                      <Box>
+                        <Typography variant="body1" fontWeight={600} color="#1E293B">
+                          {report.project || 'Uncategorized'}
                         </Typography>
-                        <Typography variant="caption" color="#94A3B8">
-                          • {report.tasks} tasks
-                        </Typography>
-                        <Typography variant="caption" color="#94A3B8">
-                          • {report.hours}h
-                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 0.5 }}>
+                          <Typography variant="caption" color="#94A3B8">
+                            Week {report.week_number}, {report.year}
+                          </Typography>
+                          <Typography variant="caption" color="#94A3B8">
+                            • {report.tasks_completed?.length || 0} tasks
+                          </Typography>
+                          <Typography variant="caption" color="#94A3B8">
+                            • {report.worked_hours || 0}h
+                          </Typography>
+                        </Box>
                       </Box>
                     </Box>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <StatusChip
-                      label={getStatusLabel(report.status)}
-                      status={report.status}
-                      size="small"
-                    />
-                    <IconButton
-                      component={Link}
-                      to={`/reports/${report.id}`}
-                      size="small"
-                      sx={{ color: '#94A3B8' }}
-                    >
-                      <ArrowForward fontSize="small" />
-                    </IconButton>
-                  </Box>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <StatusChip
+                        label={getStatusLabel(report.status)}
+                        status={report.status}
+                        size="small"
+                      />
+                      <IconButton
+                        component={Link}
+                        to={`/reports/view/${report._id}`}
+                        size="small"
+                        sx={{ color: '#94A3B8' }}
+                      >
+                        <ArrowForward fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </Paper>
+                </Grid>
+              ))}
+            </Grid>
+          )}
         </CardContent>
       </StyledCard>
     </Container>

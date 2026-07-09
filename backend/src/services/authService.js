@@ -18,6 +18,21 @@ const canAssignRole = (currentRole, targetRole) => {
   return false;
 };
 
+const normalizeTeamNo = (teamNo) => {
+  const value = String(teamNo ?? '').trim();
+
+  if (!value) {
+    return '0';
+  }
+
+  const numericChunks = value.match(/\d+/g);
+  if (numericChunks && numericChunks.length > 0) {
+    return String(Number(numericChunks[numericChunks.length - 1]));
+  }
+
+  return value.toLowerCase();
+};
+
 const getApprovalStatusForRole = (role, hasActiveManager) => {
   if (role === ROLES.MANAGER) {
     return APPROVAL_STATUS.PENDING_ADMIN;
@@ -296,7 +311,7 @@ class AuthService {
         throw new AppError('Managers can only approve team members', 403);
       }
 
-      if (String(approver.team_no) !== String(targetUser.team_no)) {
+      if (normalizeTeamNo(approver.team_no) !== normalizeTeamNo(targetUser.team_no)) {
         throw new AppError('You can only approve users from your own team', 403);
       }
     }
@@ -339,7 +354,7 @@ class AuthService {
     }
 
     if (approver.role === ROLES.MANAGER) {
-      if (targetUser.role !== ROLES.TEAM_MEMBER || String(approver.team_no) !== String(targetUser.team_no)) {
+      if (targetUser.role !== ROLES.TEAM_MEMBER || normalizeTeamNo(approver.team_no) !== normalizeTeamNo(targetUser.team_no)) {
         throw new AppError('Managers can only reject team members from their own team', 403);
       }
     }
@@ -383,8 +398,12 @@ class AuthService {
 
     if (user.role === ROLES.MANAGER) {
       query.role = ROLES.TEAM_MEMBER;
-      query.team_no = user.team_no;
-      query.approval_status = APPROVAL_STATUS.PENDING_MANAGER;
+      query.approval_status = {
+        $in: [
+          APPROVAL_STATUS.PENDING_MANAGER,
+          APPROVAL_STATUS.PENDING_ADMIN,
+        ],
+      };
     }
 
     if (user.role === ROLES.ADMIN) {
@@ -397,6 +416,14 @@ class AuthService {
     }
 
     const users = await User.find(query).select('-password -__v').sort({ createdAt: -1 });
+
+    if (user.role === ROLES.MANAGER) {
+      const managerTeamNo = normalizeTeamNo(user.team_no);
+      return users
+        .filter(item => normalizeTeamNo(item.team_no) === managerTeamNo)
+        .map(item => item.getPublicProfile());
+    }
+
     return users.map(item => item.getPublicProfile());
   }
 }
