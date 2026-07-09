@@ -1,0 +1,674 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  Box,
+  Container,
+  Typography,
+  Paper,
+  Grid,
+  Card,
+  CardContent,
+  Chip,
+  TextField,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
+  IconButton,
+  Button,
+  CircularProgress,
+  Alert,
+  Avatar,
+  Stack,
+  Divider,
+  Pagination,
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemAvatar,
+} from '@mui/material';
+import { styled } from '@mui/material/styles';
+import {
+  Refresh,
+  Search,
+  Visibility,
+  Clear,
+  Category,
+  ColorLens,
+  Description,
+  Person,
+  CheckCircle,
+  Block,
+  Folder,
+  Label,
+  Close,
+  EventNote,
+  Palette,
+  Tag,
+  CalendarToday,
+} from '@mui/icons-material';
+import api from '../api/axiosConfig';
+
+// STYLED COMPONENTS
+const CategoryCard = styled(Card)({
+  borderRadius: '16px',
+  border: '1px solid rgba(226, 232, 240, 0.8)',
+  boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+  transition: 'all 0.3s ease',
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  '&:hover': {
+    boxShadow: '0 8px 24px rgba(59, 130, 246, 0.08)',
+    transform: 'translateY(-4px)',
+    borderColor: 'rgba(59, 130, 246, 0.15)',
+  },
+});
+
+const StatsCard = styled(Paper)({
+  padding: '20px 24px',
+  borderRadius: '16px',
+  border: '1px solid rgba(226, 232, 240, 0.8)',
+  boxShadow: 'none',
+  background: 'white',
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    boxShadow: '0 4px 16px rgba(59, 130, 246, 0.06)',
+  },
+});
+
+const FilterPaper = styled(Paper)({
+  padding: '20px 24px',
+  borderRadius: '16px',
+  border: '1px solid rgba(226, 232, 240, 0.8)',
+  boxShadow: 'none',
+  background: 'white',
+  marginBottom: '24px',
+});
+
+const ColorPreview = styled(Box)(({ color }) => ({
+  width: '24px',
+  height: '24px',
+  borderRadius: '50%',
+  backgroundColor: color || '#6B7280',
+  border: '2px solid white',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+  flexShrink: 0,
+}));
+
+const StatusChip = styled(Chip)(({ isActive }) => ({
+  borderRadius: '6px',
+  fontWeight: 600,
+  fontSize: '11px',
+  height: '24px',
+  backgroundColor: isActive ? 'rgba(16, 185, 129, 0.15)' : 'rgba(148, 163, 184, 0.15)',
+  color: isActive ? '#10B981' : '#94A3B8',
+}));
+
+const DetailRow = styled(Box)({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '12px',
+  padding: '8px 0',
+  borderBottom: '1px solid #F1F5F9',
+});
+
+const DetailLabel = styled(Typography)({
+  color: '#94A3B8',
+  fontSize: '13px',
+  fontWeight: 500,
+  minWidth: '120px',
+});
+
+const DetailValue = styled(Typography)({
+  color: '#1E293B',
+  fontSize: '14px',
+  fontWeight: 500,
+});
+
+const CategoryList = () => {
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [search, setSearch] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    inactive: 0,
+  });
+  const [page, setPage] = useState(1);
+  const [rowsPerPage] = useState(6);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+
+  // Fetch categories
+  const fetchCategories = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await api.get('/categories');
+      
+      if (response.data.success) {
+        const allCategories = response.data.data.categories || [];
+        setCategories(allCategories);
+        
+        // Calculate stats
+        const total = allCategories.length;
+        const active = allCategories.filter(c => c.is_active !== false).length;
+        const inactive = allCategories.filter(c => c.is_active === false).length;
+        
+        setStats({ total, active, inactive });
+      }
+    } catch (err) {
+      setError('Failed to load categories. Please try again.');
+      console.error('Error fetching categories:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  // Filters
+  const filteredCategories = useMemo(() => {
+    let filtered = [...categories];
+
+    if (search) {
+      const query = search.toLowerCase();
+      filtered = filtered.filter(category => {
+        const name = (category.name || '').toLowerCase();
+        const description = (category.description || '').toLowerCase();
+        return name.includes(query) || description.includes(query);
+      });
+    }
+
+    if (filterStatus === 'active') {
+      filtered = filtered.filter(category => category.is_active !== false);
+    } else if (filterStatus === 'inactive') {
+      filtered = filtered.filter(category => category.is_active === false);
+    }
+
+    return filtered;
+  }, [categories, search, filterStatus]);
+
+  const paginatedCategories = useMemo(() => {
+    const start = (page - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    return filteredCategories.slice(start, end);
+  }, [filteredCategories, page, rowsPerPage]);
+
+  // Handlers
+  const clearFilters = () => {
+    setSearch('');
+    setFilterStatus('all');
+    setPage(1);
+  };
+
+  const handleViewCategory = (category) => {
+    setSelectedCategory(category);
+    setViewDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setViewDialogOpen(false);
+    setSelectedCategory(null);
+  };
+
+  const getInitials = (name) => {
+    if (!name) return 'C';
+    return name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const formatDate = (date) => {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  return (
+    <Container maxWidth="xl" sx={{ py: 4, backgroundColor: '#F8FAFC', minHeight: '100vh' }}>
+      {/* Header */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
+        <Box>
+          <Typography variant="h4" fontWeight={700} color="#1E293B" sx={{ letterSpacing: '-0.5px' }}>
+            Categories
+          </Typography>
+          <Typography variant="body2" color="#64748B" sx={{ mt: 0.5 }}>
+            Browse and view all project categories
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <IconButton 
+            onClick={fetchCategories} 
+            sx={{ 
+              border: '1px solid #E2E8F0', 
+              borderRadius: '12px',
+              transition: 'all 0.3s ease',
+              '&:hover': { borderColor: '#3B82F6' },
+            }}
+          >
+            <Refresh sx={{ color: '#64748B' }} />
+          </IconButton>
+        </Box>
+      </Box>
+
+      {/* Messages */}
+      {success && <Alert severity="success" sx={{ mb: 3, borderRadius: '12px' }} onClose={() => setSuccess('')}>{success}</Alert>}
+      {error && <Alert severity="error" sx={{ mb: 3, borderRadius: '12px' }} onClose={() => setError('')}>{error}</Alert>}
+
+      {/* Stats Cards */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={6} sm={4}>
+          <StatsCard>
+            <Typography color="#94A3B8" fontSize="13px" fontWeight={500}>Total Categories</Typography>
+            <Typography variant="h4" fontWeight={700} color="#1E293B" sx={{ mt: 0.5 }}>
+              {stats.total}
+            </Typography>
+          </StatsCard>
+        </Grid>
+        <Grid item xs={6} sm={4}>
+          <StatsCard>
+            <Typography color="#94A3B8" fontSize="13px" fontWeight={500}>Active</Typography>
+            <Typography variant="h4" fontWeight={700} color="#10B981" sx={{ mt: 0.5 }}>
+              {stats.active}
+            </Typography>
+          </StatsCard>
+        </Grid>
+        <Grid item xs={6} sm={4}>
+          <StatsCard>
+            <Typography color="#94A3B8" fontSize="13px" fontWeight={500}>Inactive</Typography>
+            <Typography variant="h4" fontWeight={700} color="#94A3B8" sx={{ mt: 0.5 }}>
+              {stats.inactive}
+            </Typography>
+          </StatsCard>
+        </Grid>
+      </Grid>
+
+      {/* Filters */}
+      <FilterPaper>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Search categories..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              InputProps={{
+                startAdornment: <Search sx={{ color: '#94A3B8', mr: 1, fontSize: 20 }} />,
+                endAdornment: search && (
+                  <IconButton size="small" onClick={() => setSearch('')}>
+                    <Clear sx={{ fontSize: 16 }} />
+                  </IconButton>
+                ),
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '12px',
+                  background: 'white',
+                },
+              }}
+            />
+          </Grid>
+          <Grid item xs={6} sm={3} md={3}>
+            <FormControl fullWidth size="small">
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                label="Status"
+                sx={{ borderRadius: '12px', background: 'white' }}
+              >
+                <MenuItem value="all">All Status</MenuItem>
+                <MenuItem value="active">Active</MenuItem>
+                <MenuItem value="inactive">Inactive</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={6} sm={3} md={3}>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<Clear />}
+              onClick={clearFilters}
+              fullWidth
+              sx={{
+                borderRadius: '12px',
+                textTransform: 'none',
+                borderColor: '#E2E8F0',
+                color: '#64748B',
+                '&:hover': { borderColor: '#3B82F6', color: '#3B82F6' },
+              }}
+            >
+              Clear
+            </Button>
+          </Grid>
+        </Grid>
+      </FilterPaper>
+
+      {/* Categories List */}
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress sx={{ color: '#3B82F6' }} />
+        </Box>
+      ) : filteredCategories.length === 0 ? (
+        <Card sx={{ borderRadius: '16px', boxShadow: 'none', border: '1px solid #E2E8F0', py: 6 }}>
+          <CardContent sx={{ textAlign: 'center' }}>
+            <Category sx={{ fontSize: 48, color: '#CBD5E1', mb: 2 }} />
+            <Typography variant="h6" color="#334155" gutterBottom>No categories found</Typography>
+            <Typography variant="body2" color="#94A3B8">There are no categories available at the moment.</Typography>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <Grid container spacing={3}>
+            {paginatedCategories.map((category) => (
+              <Grid item xs={12} sm={6} md={4} key={category._id}>
+                <CategoryCard>
+                  <CardContent sx={{ p: 3, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    {/* Header */}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1 }}>
+                        <Avatar
+                          sx={{
+                            width: 42,
+                            height: 42,
+                            bgcolor: `${category.color || '#6B7280'}20`,
+                            color: category.color || '#6B7280',
+                            fontSize: '20px',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {category.icon || <Category />}
+                        </Avatar>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography variant="subtitle1" fontWeight={600} color="#1E293B" noWrap>
+                            {category.name}
+                          </Typography>
+                          {category.category_id && (
+                            <Typography variant="caption" color="#94A3B8" noWrap>
+                              ID: {category.category_id}
+                            </Typography>
+                          )}
+                        </Box>
+                      </Box>
+                      <StatusChip
+                        label={category.is_active !== false ? 'Active' : 'Inactive'}
+                        isActive={category.is_active !== false}
+                        size="small"
+                      />
+                    </Box>
+
+                    {/* Description */}
+                    <Typography
+                      variant="body2"
+                      color="#64748B"
+                      sx={{
+                        mb: 2,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        flex: 1,
+                      }}
+                    >
+                      {category.description || 'No description provided'}
+                    </Typography>
+
+                    {/* Color Preview */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <ColorPreview color={category.color} />
+                      <Typography variant="caption" color="#94A3B8">
+                        {category.color || '#6B7280'}
+                      </Typography>
+                    </Box>
+
+                    {/* Details */}
+                    <Divider sx={{ my: 1.5 }} />
+                    <Grid container spacing={1}>
+                      <Grid item xs={6}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <Folder sx={{ fontSize: 14, color: '#94A3B8' }} />
+                          <Typography variant="caption" color="#64748B">
+                            {category.project_count || 0} projects
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <Person sx={{ fontSize: 14, color: '#94A3B8' }} />
+                          <Typography variant="caption" color="#64748B" noWrap>
+                            {category.created_by?.first_name || 'Unknown'}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <Description sx={{ fontSize: 14, color: '#94A3B8' }} />
+                          <Typography variant="caption" color="#64748B">
+                            Created: {formatDate(category.createdAt)}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    </Grid>
+
+                    {/* Actions */}
+                    <Divider sx={{ my: 1.5 }} />
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                      <Tooltip title="View Details">
+                        <Button
+                          size="small"
+                          startIcon={<Visibility />}
+                          onClick={() => handleViewCategory(category)}
+                          sx={{
+                            borderRadius: '8px',
+                            textTransform: 'none',
+                            color: '#3B82F6',
+                            '&:hover': { backgroundColor: 'rgba(59, 130, 246, 0.04)' },
+                          }}
+                        >
+                          View Category
+                        </Button>
+                      </Tooltip>
+                    </Box>
+                  </CardContent>
+                </CategoryCard>
+              </Grid>
+            ))}
+          </Grid>
+
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+            <Pagination
+              count={Math.ceil(filteredCategories.length / rowsPerPage)}
+              page={page}
+              onChange={(e, value) => setPage(value)}
+              color="primary"
+              sx={{
+                '& .MuiPaginationItem-root': {
+                  borderRadius: '8px',
+                  '&.Mui-selected': {
+                    background: 'linear-gradient(135deg, #2563EB, #3B82F6)',
+                    color: 'white',
+                  },
+                },
+              }}
+            />
+          </Box>
+        </>
+      )}
+
+      {/* View Category Dialog */}
+      <Dialog
+        open={viewDialogOpen}
+        onClose={handleCloseDialog}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '20px',
+            padding: '8px',
+          },
+        }}
+      >
+        {selectedCategory && (
+          <>
+            <DialogTitle>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box>
+                  <Typography variant="h6" fontWeight={700} color="#1E293B">
+                    {selectedCategory.name}
+                  </Typography>
+                  <Typography variant="body2" color="#94A3B8">
+                    Category Details
+                  </Typography>
+                </Box>
+                <IconButton onClick={handleCloseDialog} sx={{ color: '#94A3B8' }}>
+                  <Close />
+                </IconButton>
+              </Box>
+            </DialogTitle>
+            <DialogContent dividers>
+              <Grid container spacing={3}>
+                {/* Status and ID */}
+                <Grid item xs={12}>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <StatusChip
+                      label={selectedCategory.is_active !== false ? 'Active' : 'Inactive'}
+                      isActive={selectedCategory.is_active !== false}
+                      size="medium"
+                    />
+                    {selectedCategory.category_id && (
+                      <Chip
+                        icon={<Tag sx={{ fontSize: 14 }} />}
+                        label={`ID: ${selectedCategory.category_id}`}
+                        size="small"
+                        variant="outlined"
+                        sx={{ borderRadius: '6px' }}
+                      />
+                    )}
+                  </Box>
+                </Grid>
+
+                {/* Description */}
+                <Grid item xs={12}>
+                  <Typography variant="subtitle2" fontWeight={600} color="#64748B" sx={{ mb: 1 }}>
+                    Description
+                  </Typography>
+                  <Paper sx={{ p: 2, borderRadius: '12px', bgcolor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                    <Typography variant="body2" color="#1E293B">
+                      {selectedCategory.description || 'No description provided'}
+                    </Typography>
+                  </Paper>
+                </Grid>
+
+                {/* Details Grid */}
+                <Grid item xs={12}>
+                  <Typography variant="subtitle2" fontWeight={600} color="#64748B" sx={{ mb: 1 }}>
+                    Category Information
+                  </Typography>
+                  <Paper sx={{ p: 2, borderRadius: '12px', bgcolor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                    <Grid container spacing={1}>
+                      <Grid item xs={12} sm={6}>
+                        <DetailRow>
+                          <DetailLabel>Name</DetailLabel>
+                          <DetailValue>{selectedCategory.name}</DetailValue>
+                        </DetailRow>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <DetailRow>
+                          <DetailLabel>Status</DetailLabel>
+                          <DetailValue>
+                            {selectedCategory.is_active !== false ? 'Active' : 'Inactive'}
+                          </DetailValue>
+                        </DetailRow>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <DetailRow>
+                          <DetailLabel>Color</DetailLabel>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <ColorPreview color={selectedCategory.color} sx={{ width: 20, height: 20 }} />
+                            <DetailValue>{selectedCategory.color || '#6B7280'}</DetailValue>
+                          </Box>
+                        </DetailRow>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <DetailRow>
+                          <DetailLabel>Icon</DetailLabel>
+                          <DetailValue sx={{ fontSize: '24px' }}>{selectedCategory.icon || '📁'}</DetailValue>
+                        </DetailRow>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <DetailRow>
+                          <DetailLabel>Projects</DetailLabel>
+                          <DetailValue>{selectedCategory.project_count || 0}</DetailValue>
+                        </DetailRow>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <DetailRow>
+                          <DetailLabel>Created By</DetailLabel>
+                          <DetailValue>
+                            {selectedCategory.created_by?.first_name || 'Unknown'} {selectedCategory.created_by?.last_name || ''}
+                          </DetailValue>
+                        </DetailRow>
+                      </Grid>
+                      <Grid item xs={12}>
+                        <DetailRow>
+                          <DetailLabel>Created</DetailLabel>
+                          <DetailValue>{formatDate(selectedCategory.createdAt)}</DetailValue>
+                        </DetailRow>
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                </Grid>
+
+                {/* Projects in this category */}
+                {selectedCategory.project_count > 0 && (
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" fontWeight={600} color="#64748B" sx={{ mb: 1 }}>
+                      Projects using this category
+                    </Typography>
+                    <Paper sx={{ p: 2, borderRadius: '12px', bgcolor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Folder sx={{ color: '#94A3B8', fontSize: 20 }} />
+                        <Typography variant="body2" color="#1E293B">
+                          {selectedCategory.project_count} project{selectedCategory.project_count > 1 ? 's' : ''} are using this category
+                        </Typography>
+                      </Box>
+                    </Paper>
+                  </Grid>
+                )}
+              </Grid>
+            </DialogContent>
+            <DialogActions sx={{ p: 2.5 }}>
+              <Button
+                onClick={handleCloseDialog}
+                variant="contained"
+                sx={{
+                  borderRadius: '10px',
+                  textTransform: 'none',
+                  background: 'linear-gradient(135deg, #2563EB, #3B82F6)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #1D4ED8, #2563EB)',
+                  },
+                }}
+              >
+                Close
+              </Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
+    </Container>
+  );
+};
+
+export default CategoryList;

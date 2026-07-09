@@ -201,18 +201,32 @@ const Sidebar = ({
     },
   ];
 
+  // Management items with role-based paths
   const managementNavItems = [
     { 
       label: 'Projects', 
       icon: <Work />,
+      // Team members go to list page(only view)
+      getPath: (userRole) => {
+        if (userRole === 'team_member') {
+          return '/projects/list';
+        }
+        return '/projects';
+      },
       path: '/projects',
-      roles: ['manager', 'admin', 'super_admin'], 
+      roles: ['team_member', 'manager', 'admin', 'super_admin'],
     },
     { 
       label: 'Categories', 
       icon: <Category />, 
+      getPath: (userRole) => {
+        if (userRole === 'team_member') {
+          return '/categories/list';
+        }
+        return '/categories';
+      },
       path: '/categories',
-      roles: ['manager', 'admin','super_admin'],
+      roles: ['team_member', 'manager', 'admin','super_admin'],
     },
     { 
       label: 'Team Management', 
@@ -300,6 +314,15 @@ const Sidebar = ({
       super_admin: 'Super Admin',
     };
     return roleMap[user.role] || user.role || 'Guest';
+  };
+
+  // Handle navigation for items with dynamic paths
+  const handleItemClick = (item) => {
+    if (item.getPath && user) {
+      navigate(item.getPath(user.role));
+    } else if (item.path) {
+      navigate(item.path);
+    }
   };
 
   if (loading) {
@@ -413,7 +436,7 @@ const Sidebar = ({
                 <ListItem key={item.path} disablePadding>
                   <StyledListItem
                     active={isActive(item.path)}
-                    onClick={() => handleNavigate(item.path)}
+                    onClick={() => handleItemClick(item)}
                   >
                     <ListItemIcon>{item.icon}</ListItemIcon>
                     <StyledListItemText primary={item.label} />

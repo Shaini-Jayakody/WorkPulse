@@ -25,8 +25,8 @@ import Profile from './pages/Profile';
 import Users from './contexts/Users';
 import AdminReports from './pages/AdminReports';
 import MyReports from './pages/MyReports';
-import Projects from './pages/Projects';
-import Categories from './pages/Category';
+import ProjectList from './pages/ProjectsList';
+import CategoryList from './pages/CategoryList';
 import Analytics from './pages/Analytics';
 import TeamReports from './pages/TeamReports';
 import TeamManagement from './pages/TeamManagement';
@@ -319,14 +319,16 @@ function App() {
 
            
             {/* PROJECT ROUTES - All Authenticated Users */}
-            <Route path="/projects" element={<Projects />} />
+            <Route path="/projects" element={<ProjectList />} />
+            <Route path="/projects/list" element={<ProjectList />} />
             <Route path="/projects/create" element={<ProjectForm mode="create" />} />
             <Route path="/projects/edit/:id" element={<ProjectForm mode="edit" />} />
             <Route path="/projects/view/:id" element={<ProjectView />} />
 
           
             {/* CATEGORY ROUTES - All Authenticated Users */}
-            <Route path="/categories" element={<Categories />} />
+            <Route path="/categories" element={<CategoryList />} />
+            <Route path="/categories/list" element={<CategoryList />} />
             <Route path="/categories/create" element={<CategoryForm mode="create" />} />
             <Route path="/categories/edit/:id" element={<CategoryForm mode="edit" />} />
             <Route path="/categories/view/:id" element={<CategoryView />} />
@@ -346,29 +348,16 @@ function App() {
 
          
             {/* TEAM MANAGEMENT - Manager Only */}
-
             <Route
-              
+              path="/team"
               element={
                 isAuthenticated && user?.role === 'manager' ? (
-                  <Users />
+                  <TeamManagement />
                 ) : (
                   <Navigate to={isAuthenticated ? getDashboardPath(user?.role) : "/login"} replace />
                 )
               }
             />
-
-            <Route
-                       path="/team"
-  element={
-    isAuthenticated && user?.role === 'manager' ? (
-      <TeamManagement />
-    ) : (
-      <Navigate to={isAuthenticated ? getDashboardPath(user?.role) : "/login"} replace />
-    )
-  }
-/>
-            
 
            
             {/* CATCH ALL ROUTE */}
