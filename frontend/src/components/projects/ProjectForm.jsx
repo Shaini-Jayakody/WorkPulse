@@ -24,6 +24,11 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Avatar,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  Badge,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useFormik } from 'formik';
@@ -44,9 +49,11 @@ import {
   Add,
   Close,
   Archive,
+  Person,
+  PersonAdd,
+  Check,
 } from '@mui/icons-material';
 import api from '../../api/axiosConfig';
-
 
 // STYLED COMPONENTS
 const FormField = styled(TextField)(({ hasError, isValid }) => ({
@@ -123,8 +130,32 @@ const ValidationBadge = styled(Box)(({ valid }) => ({
   color: valid ? '#10B981' : '#EF4444',
 }));
 
+const SelectedUserCard = styled(Paper)({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '12px',
+  padding: '8px 12px',
+  borderRadius: '10px',
+  border: '1px solid #E2E8F0',
+  backgroundColor: '#F8FAFC',
+  transition: 'all 0.2s ease',
+  '&:hover': {
+    borderColor: '#3B82F6',
+    backgroundColor: '#FFFFFF',
+    boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+  },
+});
 
-//VALIDATION SCHEMA
+const StatusDot = styled(Box)(({ active }) => ({
+  width: '8px',
+  height: '8px',
+  borderRadius: '50%',
+  backgroundColor: active ? '#10B981' : '#94A3B8',
+  display: 'inline-block',
+  marginRight: '4px',
+}));
+
+// VALIDATION SCHEMA
 const validationSchema = Yup.object({
   project_name: Yup.string()
     .required('Project name is required')
@@ -144,7 +175,6 @@ const validationSchema = Yup.object({
   start_date: Yup.date()
     .nullable()
     .transform((value, originalValue) => {
-      // Handle empty string or undefined
       if (!originalValue || originalValue === '') {
         return null;
       }
@@ -154,7 +184,6 @@ const validationSchema = Yup.object({
   end_date: Yup.date()
     .nullable()
     .transform((value, originalValue) => {
-      // Handle empty string or undefined
       if (!originalValue || originalValue === '') {
         return null;
       }
@@ -163,7 +192,6 @@ const validationSchema = Yup.object({
     .typeError('Please enter a valid date')
     .test('is-after-start', 'End date must be after or equal to start date', function(value) {
       const { start_date } = this.parent;
-      // If either date is empty, skip validation
       if (!start_date || !value) return true;
       return value >= start_date;
     }),
@@ -202,13 +230,15 @@ const ProjectForm = ({ mode = 'create' }) => {
   const [tagError, setTagError] = useState('');
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
 
- 
   // FETCH DATA
   const fetchUsers = async () => {
     try {
       const response = await api.get('/auth/users');
       if (response.data.success) {
-        setUsers(response.data.data.users || []);
+        // Filter out inactive users
+        const allUsers = response.data.data.users || [];
+        const activeUsers = allUsers.filter(user => user.is_active !== false);
+        setUsers(activeUsers);
       }
     } catch (err) {
       console.error('Error fetching users:', err);
@@ -220,7 +250,12 @@ const ProjectForm = ({ mode = 'create' }) => {
       const response = await api.get('/categories');
       if (response.data.success) {
         const categoryList = response.data.data.categories || [];
-        setCategories(categoryList.map(c => c.name).filter(Boolean));
+        // Only get active categories
+        const activeCategories = categoryList
+          .filter(c => c.is_active !== false)
+          .map(c => c.name)
+          .filter(Boolean);
+        setCategories(activeCategories);
       }
     } catch (err) {
       console.error('Error fetching categories:', err);
@@ -263,7 +298,6 @@ const ProjectForm = ({ mode = 'create' }) => {
       setFetchLoading(false);
     }
   }, []);
-
 
   // FORM SETUP
   const formik = useFormik({
@@ -365,7 +399,6 @@ const ProjectForm = ({ mode = 'create' }) => {
     navigate('/projects');
   };
 
-
   // HELPERS
   const getFieldStatus = (fieldName) => {
     const touched = formik.touched[fieldName];
@@ -389,10 +422,47 @@ const ProjectForm = ({ mode = 'create' }) => {
     return formik.isValid && formik.dirty && !loading;
   };
 
+  // Get user details by ID
+  const getUserById = (userId) => {
+    return users.find(user => user._id === userId);
+  };
+
+  // Get user display name
+  const getUserDisplayName = (user) => {
+    if (!user) return 'Unknown User';
+    const firstName = user.first_name || '';
+    const lastName = user.last_name || '';
+    return `${firstName} ${lastName}`.trim() || user.email || 'Unknown User';
+  };
+
+  // Get user initials
+  const getUserInitials = (user) => {
+    if (!user) return 'U';
+    const firstName = user.first_name || '';
+    const lastName = user.last_name || '';
+    const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`;
+    return initials.toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U';
+  };
+
+  // Get user color
+  const getUserColor = (user) => {
+    if (!user) return '#6B7280';
+    const colors = ['#3B82F6', '#10B981', '#8B5CF6', '#EC4899', '#F59E0B', '#EF4444', '#14B8A6', '#6366F1'];
+    const index = (user._id?.length || 0) % colors.length;
+    return colors[index];
+  };
+
+  // User option formatter for Autocomplete
   const userOptions = users.map(user => ({
     id: user._id,
-    label: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email,
+    label: getUserDisplayName(user),
+    user: user,
   }));
+
+  // Get selected user objects
+  const selectedUsers = formik.values.assigned_users
+    .map(id => users.find(user => user._id === id))
+    .filter(Boolean);
 
   if (fetchLoading) {
     return (
@@ -721,8 +791,85 @@ const ProjectForm = ({ mode = 'create' }) => {
               />
             </Grid>
 
-            {/* Assigned Users */}
+            {/* Assigned Users - Enhanced with selected users display */}
             <Grid item xs={12}>
+              <Typography variant="subtitle2" color="#1E293B" fontWeight={600} sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <People sx={{ fontSize: 18, color: '#94A3B8' }} />
+                Assigned Users
+                <ValidationBadge valid={selectedUsers.length > 0}>
+                  {selectedUsers.length} member{selectedUsers.length !== 1 ? 's' : ''} selected
+                </ValidationBadge>
+              </Typography>
+              
+              {/* Selected Users Display */}
+              {selectedUsers.length > 0 && (
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="caption" color="#94A3B8" sx={{ display: 'block', mb: 1 }}>
+                    Selected Team Members:
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {selectedUsers.map((user) => (
+                      <SelectedUserCard key={user._id}>
+                        <Badge
+                          overlap="circular"
+                          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                          badgeContent={
+                            <Box
+                              sx={{
+                                width: 12,
+                                height: 12,
+                                borderRadius: '50%',
+                                backgroundColor: user.is_active !== false ? '#10B981' : '#94A3B8',
+                                border: '2px solid white',
+                              }}
+                            />
+                          }
+                        >
+                          <Avatar
+                            sx={{
+                              width: 32,
+                              height: 32,
+                              bgcolor: `${getUserColor(user)}20`,
+                              color: getUserColor(user),
+                              fontSize: '14px',
+                              fontWeight: 600,
+                            }}
+                          >
+                            {getUserInitials(user)}
+                          </Avatar>
+                        </Badge>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography variant="body2" fontWeight={500} color="#1E293B" noWrap>
+                            {getUserDisplayName(user)}
+                          </Typography>
+                          <Typography variant="caption" color="#94A3B8" noWrap>
+                            {user.email}
+                          </Typography>
+                        </Box>
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            const updated = formik.values.assigned_users.filter(id => id !== user._id);
+                            formik.setFieldValue('assigned_users', updated);
+                          }}
+                          sx={{
+                            color: '#94A3B8',
+                            '&:hover': {
+                              color: '#EF4444',
+                              backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                            },
+                          }}
+                        >
+                          <CloseIcon fontSize="small" />
+                        </IconButton>
+                      </SelectedUserCard>
+                    ))}
+                  </Box>
+                  <Divider sx={{ my: 2 }} />
+                </Box>
+              )}
+
+              {/* User Autocomplete */}
               <Autocomplete
                 multiple
                 options={userOptions}
@@ -731,11 +878,12 @@ const ProjectForm = ({ mode = 'create' }) => {
                   formik.setFieldValue('assigned_users', newValue.map(v => v.id));
                 }}
                 onBlur={() => formik.setFieldTouched('assigned_users', true)}
+                getOptionLabel={(option) => option.label}
                 renderInput={(params) => (
                   <FormField
                     {...params}
-                    label="Assigned Users"
-                    placeholder="Select team members"
+                    label={selectedUsers.length > 0 ? "Add more team members" : "Select team members"}
+                    placeholder="Search and select team members..."
                     size="medium"
                     hasError={getFieldStatus('assigned_users') === 'error'}
                     isValid={getFieldStatus('assigned_users') === 'valid'}
@@ -743,29 +891,70 @@ const ProjectForm = ({ mode = 'create' }) => {
                     InputProps={{
                       ...params.InputProps,
                       startAdornment: (
-                        <InputAdornment position="start">
-                          <People sx={{ color: '#94A3B8', fontSize: 18 }} />
-                        </InputAdornment>
+                        <>
+                          <InputAdornment position="start">
+                            <PersonAdd sx={{ color: '#94A3B8', fontSize: 18 }} />
+                          </InputAdornment>
+                          {params.InputProps.startAdornment}
+                        </>
                       ),
                     }}
                   />
                 )}
-                renderOption={(props, option) => (
-                  <li {...props}>
-                    <People sx={{ color: '#94A3B8', fontSize: 16, mr: 1 }} />
-                    {option.label}
-                  </li>
-                )}
-                renderTags={(value, getTagProps) =>
-                  value.map((option, index) => (
-                    <Chip
-                      key={option.id}
-                      label={option.label}
-                      {...getTagProps({ index })}
-                      sx={{ borderRadius: '6px' }}
-                    />
-                  ))
-                }
+                renderOption={(props, option) => {
+                  const isSelected = formik.values.assigned_users.includes(option.id);
+                  return (
+                    <li {...props}>
+                      <ListItemAvatar>
+                        <Avatar
+                          sx={{
+                            width: 36,
+                            height: 36,
+                            bgcolor: `${getUserColor(option.user)}20`,
+                            color: getUserColor(option.user),
+                            fontSize: '14px',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {getUserInitials(option.user)}
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {getUserDisplayName(option.user)}
+                            {option.user.is_active !== false && (
+                              <Chip
+                                label="Active"
+                                size="small"
+                                sx={{
+                                  height: 16,
+                                  fontSize: '8px',
+                                  backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                                  color: '#10B981',
+                                  '& .MuiChip-label': { px: 0.5 },
+                                }}
+                              />
+                            )}
+                          </Box>
+                        }
+                        secondary={option.user.email}
+                      />
+                      {isSelected && (
+                        <Check sx={{ color: '#3B82F6' }} />
+                      )}
+                    </li>
+                  );
+                }}
+                renderTags={() => null} // Hide default tags, we show selected users above
+                filterOptions={(options, { inputValue }) => {
+                  const filtered = options.filter(option =>
+                    option.label.toLowerCase().includes(inputValue.toLowerCase()) ||
+                    option.user.email.toLowerCase().includes(inputValue.toLowerCase())
+                  );
+                  return filtered;
+                }}
+                noOptionsText="No users found"
               />
             </Grid>
 
