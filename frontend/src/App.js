@@ -7,6 +7,7 @@ import RegisterForm from './components/auth/RegisterForm';
 import LoginForm from './components/auth/LoginForm';
 import TeamMemberDashboard from './components/dashboards/TeamMember';
 import SuperAdminDashboard from './components/dashboards/SuperAdmin';
+import AdminDashboard from './components/dashboards/Admin';
 import Sidebar from './components/common/Sidebar/SideBar';
 import Users from './contexts/Users';
 import CreateUserForm from './components/auth/CreateUserForm';
@@ -76,6 +77,8 @@ function App() {
   const getDashboardPath = (role) => {
     if (role === 'super_admin') {
       return '/dashboard/super-admin';
+    } else if (role === 'admin') {
+      return '/dashboard/admin';
     }
     return '/dashboard/team-member';
   };
@@ -140,17 +143,31 @@ function App() {
               } 
             />
 
+            {/* Admin Dashboard */}
             <Route
-              path="/dashboard/team-member"
+              path="/dashboard/admin"
               element={
-                isAuthenticated ? (
-                  <TeamMemberDashboard />
+                isAuthenticated && user?.role === 'admin' ? (
+                  <AdminDashboard />
                 ) : (
-                  <Navigate to="/login" replace />
+                  <Navigate to={isAuthenticated ? getDashboardPath(user?.role) : "/login"} replace />
                 )
               }
             />
 
+            {/* Team Member Dashboard */}
+            <Route
+              path="/dashboard/team-member"
+              element={
+                isAuthenticated && user?.role === 'team_member' ? (
+                  <TeamMemberDashboard />
+                ) : (
+                  <Navigate to={isAuthenticated ? getDashboardPath(user?.role) : "/login"} replace />
+                )
+              }
+            />
+
+            {/* Super Admin Dashboard */}
             <Route
               path="/dashboard/super-admin"
               element={
@@ -185,10 +202,12 @@ function App() {
                 )
               }
             />
+            
+            {/* Projects */}
             <Route path="/projects" element={<Projects />} />
-<Route path="/projects/create" element={<ProjectForm mode="create" />} />
-<Route path="/projects/edit/:id" element={<ProjectForm mode="edit" />} />
-<Route path="/projects/view/:id" element={<ProjectView />} />
+            <Route path="/projects/create" element={<ProjectForm mode="create" />} />
+            <Route path="/projects/edit/:id" element={<ProjectForm mode="edit" />} />
+            <Route path="/projects/view/:id" element={<ProjectView />} />
 
             {/* Report View - Team Member */}
             <Route
@@ -213,10 +232,12 @@ function App() {
                 )
               }
             />
-          <Route path="/categories" element={<Categories />} />
-<Route path="/categories/create" element={<CategoryForm mode="create" />} />
-<Route path="/categories/edit/:id" element={<CategoryForm mode="edit" />} />
-<Route path="/categories/view/:id" element={<CategoryView />} />
+
+            {/* Categories */}
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/categories/create" element={<CategoryForm mode="create" />} />
+            <Route path="/categories/edit/:id" element={<CategoryForm mode="edit" />} />
+            <Route path="/categories/view/:id" element={<CategoryView />} />
 
             {/* Users Management - Admin/Super Admin */}
             <Route
