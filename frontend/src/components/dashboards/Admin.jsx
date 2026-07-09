@@ -145,6 +145,7 @@ const StatusChip = styled(Chip)(({ status }) => {
     draft: '#94A3B8',
     pending_manager_approval: '#F59E0B',
     pending_admin_approval: '#8B5CF6',
+    pending_super_admin_approval: '#EC4899',
     approved: '#10B981',
     rejected: '#EF4444',
   };
@@ -176,7 +177,7 @@ const COLORS = ['#3B82F6', '#8B5CF6', '#EC4899', '#10B981', '#F59E0B', '#EF4444'
 
 
 // COMPONENT
-const ManagerDashboard = () => {
+const AdminDashboard = () => {
   const [dashboardData, setDashboardData] = useState({
     summary: {},
     submission: { stats: {}, members: [] },
@@ -287,7 +288,6 @@ const ManagerDashboard = () => {
       }
     } catch (err) {
       console.error('Error fetching pending approvals:', err);
-      // Don't show error for approvals, just log it
     } finally {
       setLoadingApprovals(false);
     }
@@ -396,7 +396,6 @@ const ManagerDashboard = () => {
       const response = await api.post(`/auth/users/${approvalDialog.user._id}/approve`);
       if (response.data.success) {
         setSuccess(`${approvalDialog.user.first_name} ${approvalDialog.user.last_name} has been approved successfully!`);
-        // Refresh pending approvals
         await fetchPendingApprovals();
         setApprovalDialog({ open: false, user: null, action: null });
       }
@@ -422,7 +421,6 @@ const ManagerDashboard = () => {
       });
       if (response.data.success) {
         setSuccess(`${approvalDialog.user.first_name} ${approvalDialog.user.last_name} has been rejected.`);
-        // Refresh pending approvals
         await fetchPendingApprovals();
         setApprovalDialog({ open: false, user: null, action: null });
         setRejectionReason('');
@@ -472,7 +470,7 @@ const ManagerDashboard = () => {
       const displayText = viewType === 'week' 
         ? `Week ${selectedWeekInMonth} of ${months[selectedMonth]} ${selectedYear}`
         : `${months[selectedMonth]} ${selectedYear}`;
-      pdf.text(`Manager Dashboard Report - ${displayText}`, 15, 20);
+      pdf.text(`Admin Dashboard Report - ${displayText}`, 15, 20);
       
       pdf.setFontSize(10);
       pdf.setTextColor('#94A3B8');
@@ -496,7 +494,7 @@ const ManagerDashboard = () => {
         pdf.text(`Confidential Report | Page ${i} of ${pageCount}`, pdfWidth / 2, pdf.internal.pageSize.getHeight() - 10, { align: 'center' });
       }
 
-      pdf.save(`Manager_Dashboard_${viewType}_${new Date().toISOString().split('T')[0]}.pdf`);
+      pdf.save(`Admin_Dashboard_${viewType}_${new Date().toISOString().split('T')[0]}.pdf`);
     } catch (error) {
       console.error('PDF export error:', error);
       setError('Failed to generate PDF. Please try again.');
@@ -549,6 +547,7 @@ const ManagerDashboard = () => {
       draft: 'Draft',
       pending_manager_approval: 'Pending Manager',
       pending_admin_approval: 'Pending Admin',
+      pending_super_admin_approval: 'Pending Super Admin',
       approved: 'Approved',
       rejected: 'Rejected',
     };
@@ -594,7 +593,7 @@ const ManagerDashboard = () => {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
           <Box>
             <Typography variant="h4" fontWeight={700} color="#1E293B" sx={{ letterSpacing: '-0.5px' }}>
-              Manager Dashboard
+              Admin Dashboard
             </Typography>
             <Typography variant="body2" color="#64748B" sx={{ mt: 0.5 }}>
               {viewType === 'week' 
@@ -1070,7 +1069,7 @@ const ManagerDashboard = () => {
                       <RechartsTooltip 
                         contentStyle={{ borderRadius: '8px', border: '1px solid #E2E8F0' }}
                         formatter={(value, name) => {
-                          if (name === 'hasSubmitted') return [value ? ' Submitted' : ' Not Submitted', 'Status'];
+                          if (name === 'hasSubmitted') return [value ? '✅ Submitted' : '❌ Not Submitted', 'Status'];
                           return [`${value}h`, name];
                         }}
                       />
@@ -1352,4 +1351,4 @@ const ManagerDashboard = () => {
   );
 };
 
-export default ManagerDashboard;
+export default AdminDashboard;
