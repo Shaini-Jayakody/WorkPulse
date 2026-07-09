@@ -21,6 +21,9 @@ import ManagerDashboard from './components/dashboards/Manager';
 
 // Page Components
 import Home from './pages/Home';
+import AboutUs from './pages/AboutUs';
+import ContactUs from './pages/ContactUs';
+import Services from './pages/Services';
 import Profile from './pages/Profile';
 import Users from './contexts/Users';
 import AdminReports from './pages/AdminReports';
@@ -153,6 +156,9 @@ function App() {
           <Routes>
             {/* PUBLIC ROUTES - No Sidebar Required */}
             <Route path="/" element={<Home />} />
+            <Route path="/about" element={<AboutUs />} />
+            <Route path="/contact" element={<ContactUs />} />
+            <Route path="/services" element={<Services />} />
             <Route path="/register" element={<RegisterForm />} />
             <Route
               path="/login"

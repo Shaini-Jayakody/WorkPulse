@@ -165,7 +165,7 @@ const Home = () => {
               </GradientButton>
               <OutlineButton
                 variant="outlined"
-                onClick={() => navigate('/login')}
+                onClick={() => navigate('/about')}
               >
                 Learn More
               </OutlineButton>
