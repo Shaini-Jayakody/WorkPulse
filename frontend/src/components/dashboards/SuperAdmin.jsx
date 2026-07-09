@@ -62,10 +62,7 @@ import html2canvas from 'html2canvas';
 import api from '../../api/axiosConfig';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, getWeek, getYear, getMonth, eachWeekOfInterval, getWeeksInMonth } from 'date-fns';
 
-// ============================================
 // STYLED COMPONENTS
-// ============================================
-
 const StatsCard = styled(Paper)({
   padding: '20px 24px',
   borderRadius: '16px',
@@ -108,16 +105,12 @@ const ViewToggle = styled(Tabs)({
   },
 });
 
-// ============================================
-// CHART COLORS
-// ============================================
 
+// CHART COLORS
 const COLORS = ['#3B82F6', '#8B5CF6', '#EC4899', '#10B981', '#F59E0B', '#EF4444', '#06B6D4', '#6366F1'];
 
-// ============================================
-// COMPONENT
-// ============================================
 
+// COMPONENT
 const SuperAdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [reports, setReports] = useState([]);
@@ -133,10 +126,8 @@ const SuperAdminDashboard = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedWeekInMonth, setSelectedWeekInMonth] = useState(1);
 
-  // ============================================
-  // HELPERS
-  // ============================================
 
+  // HELPERS
   const getWeekNumber = (date) => {
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
     const dayNum = d.getUTCDay() || 7;
@@ -197,10 +188,8 @@ const SuperAdminDashboard = () => {
     }
   };
 
-  // ============================================
+  
   // GENERATE SELECTOR OPTIONS
-  // ============================================
-
   const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
