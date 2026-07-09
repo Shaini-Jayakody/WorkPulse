@@ -17,6 +17,9 @@ import ReportView from './components/reports/ReportView';
 import Projects from './pages/Projects';
 import ProjectView from './components/projects/ProjectView';
 import ProjectForm from './components/projects/ProjectForm';
+import Categories from './pages/Category';
+import CategoryForm from './components/category/CategoryForm';
+import CategoryView from './components/category/CategoryView';
 
 import api from './api/axiosConfig';
 
@@ -210,6 +213,10 @@ function App() {
                 )
               }
             />
+          <Route path="/categories" element={<Categories />} />
+<Route path="/categories/create" element={<CategoryForm mode="create" />} />
+<Route path="/categories/edit/:id" element={<CategoryForm mode="edit" />} />
+<Route path="/categories/view/:id" element={<CategoryView />} />
 
             {/* Users Management - Admin/Super Admin */}
             <Route

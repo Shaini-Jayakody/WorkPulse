@@ -218,7 +218,7 @@ const Sidebar = ({
       label: 'Categories', 
       icon: <Category />, 
       path: '/categories',
-      roles: ['manager', 'admin'],
+      roles: ['manager', 'admin','super_admin'],
     },
     { 
       label: 'Team Management', 
