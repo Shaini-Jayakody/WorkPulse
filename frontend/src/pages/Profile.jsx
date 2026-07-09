@@ -14,9 +14,14 @@ import {
   CircularProgress,
   Avatar,
   Divider,
-  Card,
-  CardContent,
   Chip,
+  Stack,
+  Tooltip,
+  FormHelperText,
+  InputLabel,
+  FormControl,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import {
   Person,
@@ -32,6 +37,11 @@ import {
   Work,
   Group,
   Event,
+  Cake,
+  Home,
+  Wc,
+  CalendarToday,
+  LocationOn,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useFormik } from 'formik';
@@ -69,7 +79,7 @@ const ProfileCard = styled(Paper)({
   zIndex: 2,
   borderRadius: '24px',
   padding: '40px 44px',
-  maxWidth: '680px',
+  maxWidth: '720px',
   width: '100%',
   background: 'rgba(255,255,255,0.10)',
   backdropFilter: 'blur(24px)',
@@ -133,6 +143,35 @@ const StyledTextField = styled(TextField)({
   },
 });
 
+const StyledSelect = styled(Select)({
+  borderRadius: '12px',
+  backgroundColor: 'rgba(255,255,255,0.06)',
+  transition: 'all 0.2s ease',
+  color: 'white',
+  '&:hover': {
+    backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+  '&.Mui-focused': {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.12)',
+  },
+  '& .MuiOutlinedInput-notchedOutline': {
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  '&:hover .MuiOutlinedInput-notchedOutline': {
+    borderColor: 'rgba(255,255,255,0.25)',
+  },
+  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+    borderColor: '#3B82F6',
+  },
+  '& .MuiSelect-icon': {
+    color: 'rgba(255,255,255,0.5)',
+  },
+  '& .MuiMenuItem-root': {
+    color: '#1E293B',
+  },
+});
+
 const GradientButton = styled(Button)({
   background: 'linear-gradient(135deg, #2563EB 0%, #3B82F6 50%, #6366F1 100%)',
   color: 'white',
@@ -153,6 +192,7 @@ const GradientButton = styled(Button)({
     boxShadow: 'none',
     transform: 'none',
     color: 'rgba(255,255,255,0.3)',
+    cursor: 'not-allowed',
   },
 });
 
@@ -210,6 +250,29 @@ const UploadIcon = styled(Box)({
   },
 });
 
+const InfoCard = styled(Paper)({
+  padding: '12px 16px',
+  borderRadius: '12px',
+  backgroundColor: 'rgba(255,255,255,0.04)',
+  border: '1px solid rgba(255,255,255,0.06)',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '12px',
+});
+
+const InfoLabel = styled(Typography)({
+  color: 'rgba(255,255,255,0.4)',
+  fontSize: '11px',
+  fontWeight: 500,
+  textTransform: 'uppercase',
+  letterSpacing: '0.5px',
+});
+
+const InfoValue = styled(Typography)({
+  color: 'rgba(255,255,255,0.9)',
+  fontSize: '14px',
+  fontWeight: 500,
+});
 
 // VALIDATION SCHEMA
 const validationSchema = Yup.object({
@@ -226,8 +289,16 @@ const validationSchema = Yup.object({
   contact_no: Yup.string()
     .required('Contact number is required')
     .matches(/^\+?[\d\s-]{10,15}$/, 'Enter a valid contact number (10-15 digits)'),
+  birthday: Yup.date()
+    .nullable()
+    .typeError('Please enter a valid date'),
+  gender: Yup.string()
+    .oneOf(['male', 'female', 'other', 'prefer_not_to_say'], 'Invalid gender'),
+  address: Yup.string()
+    .max(250, 'Address cannot exceed 250 characters'),
+  team_no: Yup.string()
+    .max(50, 'Team number cannot exceed 50 characters'),
 });
-
 
 // COMPONENT
 const Profile = () => {
@@ -239,6 +310,7 @@ const Profile = () => {
   const [user, setUser] = useState(null);
   const [profilePreview, setProfilePreview] = useState(null);
   const [profileFile, setProfileFile] = useState(null);
+  const [hasChanges, setHasChanges] = useState(false);
 
   // Fetch user profile
   useEffect(() => {
@@ -251,6 +323,17 @@ const Profile = () => {
           if (userData.profile_picture_url) {
             setProfilePreview(userData.profile_picture_url);
           }
+          
+          // Set form values
+          formik.setValues({
+            first_name: userData.first_name || '',
+            last_name: userData.last_name || '',
+            contact_no: userData.contact_no || '',
+            birthday: userData.birthday ? new Date(userData.birthday).toISOString().split('T')[0] : '',
+            gender: userData.gender || '',
+            address: userData.address || '',
+            team_no: userData.team_no || '',
+          });
         }
       } catch (err) {
         setError('Failed to load profile data.');
@@ -264,9 +347,13 @@ const Profile = () => {
 
   const formik = useFormik({
     initialValues: {
-      first_name: user?.first_name || '',
-      last_name: user?.last_name || '',
-      contact_no: user?.contact_no || '',
+      first_name: '',
+      last_name: '',
+      contact_no: '',
+      birthday: '',
+      gender: '',
+      address: '',
+      team_no: '',
     },
     validationSchema,
     enableReinitialize: true,
@@ -282,6 +369,19 @@ const Profile = () => {
         formData.append('first_name', values.first_name);
         formData.append('last_name', values.last_name);
         formData.append('contact_no', values.contact_no);
+        
+        if (values.birthday) {
+          formData.append('birthday', values.birthday);
+        }
+        if (values.gender) {
+          formData.append('gender', values.gender);
+        }
+        if (values.address) {
+          formData.append('address', values.address);
+        }
+        if (values.team_no) {
+          formData.append('team_no', values.team_no);
+        }
         
         if (profileFile) {
           formData.append('profile_picture', profileFile);
@@ -300,6 +400,18 @@ const Profile = () => {
           if (response.data.data.user.profile_picture_url) {
             setProfilePreview(response.data.data.user.profile_picture_url);
           }
+          setHasChanges(false);
+          // Reset form with new values
+          const userData = response.data.data.user;
+          formik.setValues({
+            first_name: userData.first_name || '',
+            last_name: userData.last_name || '',
+            contact_no: userData.contact_no || '',
+            birthday: userData.birthday ? new Date(userData.birthday).toISOString().split('T')[0] : '',
+            gender: userData.gender || '',
+            address: userData.address || '',
+            team_no: userData.team_no || '',
+          });
           setTimeout(() => setSuccess(null), 5000);
         }
       } catch (err) {
@@ -318,6 +430,34 @@ const Profile = () => {
     },
   });
 
+  // Check for changes in form values
+  const checkForChanges = (values) => {
+    if (!user) return false;
+    
+    const initialValues = {
+      first_name: user.first_name || '',
+      last_name: user.last_name || '',
+      contact_no: user.contact_no || '',
+      birthday: user.birthday ? new Date(user.birthday).toISOString().split('T')[0] : '',
+      gender: user.gender || '',
+      address: user.address || '',
+      team_no: user.team_no || '',
+    };
+
+    // Check if any field has changed
+    for (const key in initialValues) {
+      if (values[key] !== initialValues[key]) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // Check if form has changes on every value update
+  useEffect(() => {
+    setHasChanges(checkForChanges(formik.values));
+  }, [formik.values, user]);
+
   const handleProfilePictureChange = (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -335,6 +475,7 @@ const Profile = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         setProfilePreview(reader.result);
+        setHasChanges(true);
       };
       reader.readAsDataURL(file);
       setError(null);
@@ -366,6 +507,20 @@ const Profile = () => {
       team_member: '#10B981',
     };
     return colors[user.role] || '#64748B';
+  };
+
+  const formatDate = (date) => {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  // Determine if save button should be disabled
+  const isSaveDisabled = () => {
+    return loading || !hasChanges || !formik.isValid || !formik.dirty;
   };
 
   if (fetchLoading) {
@@ -408,7 +563,7 @@ const Profile = () => {
               My Profile
             </Typography>
             <Typography variant="body2" color="rgba(255,255,255,0.5)" mt={0.5}>
-              Update your personal information
+              View and manage your personal information
             </Typography>
           </Box>
 
@@ -449,7 +604,7 @@ const Profile = () => {
           {/* Profile Picture */}
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
             <AvatarUpload>
-              <StyledAvatar src={profilePreview || '/default-avatar.png'}>
+              <StyledAvatar src={profilePreview || undefined}>
                 {!profilePreview && getInitials()}
               </StyledAvatar>
               <UploadIcon>
@@ -469,7 +624,7 @@ const Profile = () => {
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, flexWrap: 'wrap', mb: 3 }}>
               <Chip
                 icon={<BadgeIcon sx={{ fontSize: 16 }} />}
-                label={user.user_id}
+                label={`ID: ${user.user_id}`}
                 size="small"
                 sx={{
                   borderRadius: '6px',
@@ -502,20 +657,44 @@ const Profile = () => {
                   }}
                 />
               )}
-              {user.email && (
-                <Chip
-                  icon={<Email sx={{ fontSize: 16 }} />}
-                  label={user.email}
-                  size="small"
-                  sx={{
-                    borderRadius: '6px',
-                    backgroundColor: 'rgba(255,255,255,0.06)',
-                    color: 'rgba(255,255,255,0.6)',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                  }}
-                />
-              )}
+              <Chip
+                icon={<Email sx={{ fontSize: 16 }} />}
+                label={user.email}
+                size="small"
+                sx={{
+                  borderRadius: '6px',
+                  backgroundColor: 'rgba(255,255,255,0.06)',
+                  color: 'rgba(255,255,255,0.6)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                }}
+              />
             </Box>
+          )}
+
+          {/* Read-only Info Cards */}
+          {user && (
+            <Grid container spacing={1.5} sx={{ mb: 3 }}>
+              <Grid item xs={12} sm={6}>
+                <InfoCard>
+                  <CalendarToday sx={{ color: 'rgba(255,255,255,0.4)', fontSize: 18 }} />
+                  <Box>
+                    <InfoLabel>Member Since</InfoLabel>
+                    <InfoValue>{formatDate(user.createdAt)}</InfoValue>
+                  </Box>
+                </InfoCard>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <InfoCard>
+                  <CheckCircle sx={{ color: 'rgba(255,255,255,0.4)', fontSize: 18 }} />
+                  <Box>
+                    <InfoLabel>Status</InfoLabel>
+                    <InfoValue sx={{ color: user.isActive ? '#10B981' : '#EF4444' }}>
+                      {user.isActive ? 'Active' : 'Inactive'}
+                    </InfoValue>
+                  </Box>
+                </InfoCard>
+              </Grid>
+            </Grid>
           )}
 
           <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)', mb: 3 }} />
@@ -523,6 +702,7 @@ const Profile = () => {
           {/* Form */}
           <form onSubmit={formik.handleSubmit}>
             <Grid container spacing={2.5}>
+              {/* First Name */}
               <Grid item xs={12} sm={6}>
                 <StyledTextField
                   fullWidth
@@ -545,6 +725,7 @@ const Profile = () => {
                 />
               </Grid>
 
+              {/* Last Name */}
               <Grid item xs={12} sm={6}>
                 <StyledTextField
                   fullWidth
@@ -557,9 +738,17 @@ const Profile = () => {
                   onBlur={formik.handleBlur}
                   error={formik.touched.last_name && Boolean(formik.errors.last_name)}
                   helperText={formik.touched.last_name && formik.errors.last_name}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Person sx={{ color: 'rgba(255,255,255,0.3)', fontSize: 18 }} />
+                      </InputAdornment>
+                    ),
+                  }}
                 />
               </Grid>
 
+              {/* Email - Read Only */}
               <Grid item xs={12}>
                 <StyledTextField
                   fullWidth
@@ -579,7 +768,8 @@ const Profile = () => {
                 />
               </Grid>
 
-              <Grid item xs={12}>
+              {/* Contact Number */}
+              <Grid item xs={12} sm={6}>
                 <StyledTextField
                   fullWidth
                   label="Phone Number"
@@ -601,7 +791,28 @@ const Profile = () => {
                 />
               </Grid>
 
-              <Grid item xs={12}>
+              {/* Team Number - Read Only */}
+              <Grid item xs={12} sm={6}>
+                <StyledTextField
+                  fullWidth
+                  label="Team Number"
+                  name="team_no"
+                  value={formik.values.team_no || ''}
+                  disabled
+                  size="medium"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Group sx={{ color: 'rgba(255,255,255,0.3)', fontSize: 18 }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                  helperText="Team number is set by admin and cannot be changed"
+                />
+              </Grid>
+
+              {/* User ID - Read Only */}
+              <Grid item xs={12} sm={6}>
                 <StyledTextField
                   fullWidth
                   label="User ID"
@@ -620,19 +831,129 @@ const Profile = () => {
                 />
               </Grid>
 
+              {/* Birthday */}
+              <Grid item xs={12} sm={6}>
+                <StyledTextField
+                  fullWidth
+                  label="Birthday"
+                  name="birthday"
+                  type="date"
+                  size="medium"
+                  value={formik.values.birthday}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={formik.touched.birthday && Boolean(formik.errors.birthday)}
+                  helperText={formik.touched.birthday && formik.errors.birthday}
+                  InputLabelProps={{ shrink: true }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Cake sx={{ color: 'rgba(255,255,255,0.3)', fontSize: 18 }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+
+              {/* Gender */}
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth size="medium">
+                  <InputLabel sx={{ color: 'rgba(255,255,255,0.7)' }}>Gender</InputLabel>
+                  <StyledSelect
+                    name="gender"
+                    value={formik.values.gender}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    label="Gender"
+                    error={formik.touched.gender && Boolean(formik.errors.gender)}
+                    MenuProps={{
+                      PaperProps: {
+                        sx: {
+                          backgroundColor: '#1E293B',
+                          borderRadius: '12px',
+                          border: '1px solid rgba(255,255,255,0.06)',
+                        },
+                      },
+                    }}
+                  >
+                    <MenuItem value="">
+                      <em style={{ color: 'rgba(255,255,255,0.5)' }}>Select gender</em>
+                    </MenuItem>
+                    <MenuItem value="male" sx={{ color: 'white' }}>Male</MenuItem>
+                    <MenuItem value="female" sx={{ color: 'white' }}>Female</MenuItem>
+                    <MenuItem value="other" sx={{ color: 'white' }}>Other</MenuItem>
+                    <MenuItem value="prefer_not_to_say" sx={{ color: 'white' }}>Prefer not to say</MenuItem>
+                  </StyledSelect>
+                  {formik.touched.gender && formik.errors.gender && (
+                    <FormHelperText error>{formik.errors.gender}</FormHelperText>
+                  )}
+                </FormControl>
+              </Grid>
+
+              {/* Address */}
+              <Grid item xs={12}>
+                <StyledTextField
+                  fullWidth
+                  label="Address"
+                  name="address"
+                  placeholder="Enter your address"
+                  size="medium"
+                  multiline
+                  rows={2}
+                  value={formik.values.address}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={formik.touched.address && Boolean(formik.errors.address)}
+                  helperText={formik.touched.address && formik.errors.address}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <LocationOn sx={{ color: 'rgba(255,255,255,0.3)', fontSize: 18 }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+
+              {/* Change Indicator */}
+              {hasChanges && (
+                <Grid item xs={12}>
+                  <Alert 
+                    severity="info" 
+                    sx={{ 
+                      borderRadius: 2, 
+                      fontSize: '13px', 
+                      backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                      color: 'rgba(255,255,255,0.9)',
+                      borderColor: 'rgba(59, 130, 246, 0.2)',
+                    }}
+                  >
+                    You have unsaved changes. Click "Save Changes" to update your profile.
+                  </Alert>
+                </Grid>
+              )}
+
               {/* Action Buttons */}
               <Grid item xs={12}>
                 <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 2 }}>
                   <OutlineButton
                     variant="outlined"
-                    onClick={() => navigate(-1)}
+                    onClick={() => {
+                      if (hasChanges) {
+                        if (window.confirm('You have unsaved changes. Are you sure you want to leave?')) {
+                          navigate(-1);
+                        }
+                      } else {
+                        navigate(-1);
+                      }
+                    }}
                     disabled={loading}
                   >
                     Cancel
                   </OutlineButton>
                   <GradientButton
                     type="submit"
-                    disabled={loading || !formik.isValid || !formik.dirty}
+                    disabled={isSaveDisabled()}
                     startIcon={!loading && <Save />}
                   >
                     {loading ? <CircularProgress size={24} color="inherit" /> : 'Save Changes'}

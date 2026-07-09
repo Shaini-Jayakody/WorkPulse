@@ -173,7 +173,7 @@ const Sidebar = ({
     return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
-  // Navigation items
+  // Navigation items (Profile removed from mainNav)
   const mainNavItems = [
     { 
       label: 'Dashboard', 
@@ -199,12 +199,6 @@ const Sidebar = ({
       path: '/analytics',
       roles: ['manager', 'admin','super_admin'],
     },
-     { 
-      label: 'Profile', 
-      icon: <Person />, 
-      path: '/profile',
-      roles: ['team_member', 'manager', 'admin', 'super_admin'],
-    },
   ];
 
   const managementNavItems = [
@@ -226,7 +220,6 @@ const Sidebar = ({
       path: '/team',
       roles: ['manager'],
     },
-   
   ];
 
   // Super Admin specific nav items
@@ -249,6 +242,14 @@ const Sidebar = ({
     },
   ];
 
+  // Profile item (separate, always at the end)
+  const profileNavItem = {
+    label: 'Profile',
+    icon: <Person />,
+    path: '/profile',
+    roles: ['team_member', 'manager', 'admin', 'super_admin'],
+  };
+
   // Combine all nav items
   const allNavItems = [
     ...mainNavItems, 
@@ -267,14 +268,17 @@ const Sidebar = ({
 
   const visibleNavItems = getVisibleItems(allNavItems);
 
-  // Split into sections
+  // Split into sections (Profile is not included here)
   const mainNav = visibleNavItems.filter(item => 
     ['Dashboard', 'My Reports', 'Team Reports', 'Analytics', 'Users', 'All Reports'].includes(item.label)
   );
   
   const managementNav = visibleNavItems.filter(item => 
-    ['Projects', 'Categories', 'Team Management', 'Profile'].includes(item.label)
+    ['Projects', 'Categories', 'Team Management'].includes(item.label)
   );
+
+  // Check if Profile should be shown for this user
+  const showProfile = !profileNavItem.roles || profileNavItem.roles.includes(user?.role);
 
   // Get user data
   const getUserInitials = () => {
@@ -360,7 +364,7 @@ const Sidebar = ({
         </Box>
       </SidebarHeader>
 
-      {/* User Profile */}
+      {/* User Profile - Fixed click to navigate to profile */}
       <UserProfile>
         <Tooltip title="View Profile" arrow>
           <UserAvatar 
@@ -422,6 +426,26 @@ const Sidebar = ({
       )}
 
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)', mx: 2, mt: 'auto' }} />
+
+      {/* Profile - Now at the end, right before logout */}
+      {showProfile && (
+        <>
+          <NavSection>
+            <List disablePadding>
+              <ListItem disablePadding>
+                <StyledListItem
+                  active={isActive(profileNavItem.path)}
+                  onClick={() => handleNavigate(profileNavItem.path)}
+                >
+                  <ListItemIcon>{profileNavItem.icon}</ListItemIcon>
+                  <StyledListItemText primary={profileNavItem.label} />
+                </StyledListItem>
+              </ListItem>
+            </List>
+          </NavSection>
+          <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)', mx: 2 }} />
+        </>
+      )}
 
       {/* Logout */}
       <Box sx={{ p: 1, pb: 2 }}>
