@@ -191,13 +191,13 @@ const Sidebar = ({
       label: 'Team Reports', 
       icon: <Group />, 
       path: '/team-reports',
-      roles: ['manager', 'admin'],
+      roles: ['manager'],
     },
     { 
       label: 'Analytics', 
       icon: <BarChart />, 
       path: '/analytics',
-      roles: ['manager', 'admin'],
+      roles: ['manager', 'admin','super_admin'],
     },
      { 
       label: 'Profile', 
@@ -224,7 +224,7 @@ const Sidebar = ({
       label: 'Team Management', 
       icon: <People />, 
       path: '/team',
-      roles: ['manager', 'admin'],
+      roles: ['manager'],
     },
    
   ];

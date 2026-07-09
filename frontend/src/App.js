@@ -21,6 +21,7 @@ import ProjectForm from './components/projects/ProjectForm';
 import Categories from './pages/Category';
 import CategoryForm from './components/category/CategoryForm';
 import CategoryView from './components/category/CategoryView';
+import Analytics from './pages/Analytics';
 
 import api from './api/axiosConfig';
 
@@ -250,6 +251,17 @@ function App() {
                 )
               }
             />
+       <Route
+  path="/analytics"
+  element={
+                isAuthenticated && ['manager', 'admin', 'super_admin'].includes(user?.role) ? (
+      <Analytics />
+    ) : (
+      <Navigate to={isAuthenticated ? getDashboardPath(user?.role) : "/login"} replace />
+    )
+  }
+/>
+
 
             {/* Create User - Admin/Super Admin */}
             <Route
